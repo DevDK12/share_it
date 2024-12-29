@@ -1,12 +1,13 @@
 import { View } from 'react-native'
 import { commonStyles } from '../styles/commonStyles'
-import CustomText from '../components/global/CustomText'
+import HomeHeader from '../components/home/HomeHeader'
 
 
 const HomeScreen = () => {
     return (
         <View style={commonStyles.baseContainer}>
-            <CustomText> Home Screen </CustomText>
+            <HomeHeader />
+
         </View>
     )
 }
