@@ -20,7 +20,7 @@
     "ultimate-reset": "npm run clean-npm && npm run clean-metro",
     "ultimate-reset2": "npm run clean-npm && npm run clean-watchman && npm run clean-jest && npm run clean-metro",
     "pod-install": "cd ios && RCT_NEW_ARCH_ENABLED=1 bundle exec pod install",
-    "install": "npm install js-yaml --no-save && node install.js",
+    "req-install": "npm install js-yaml --no-save && node install.js",
     "test": "jest"
   },
   "dependencies": {

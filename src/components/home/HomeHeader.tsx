@@ -4,11 +4,15 @@ import { homeHeaderStyles } from '../../styles/homeHeaderStyles';
 import { screenHeight, screenWidth, svgPath } from '../../utils/Constants';
 import Svg, {Defs, LinearGradient, Path, Stop} from 'react-native-svg';
 import Icon from '../global/Icon';
+import QRGenerateModal from '../modals/QRGenerateModal';
+import { useState } from 'react';
 
 const logo = require('../../assets/images/logo_t.png');
 const profile = require('../../assets/images/profile.jpg');
 
 const HomeHeader = () => {
+    const [showQr, setShowQr] = useState(false);
+
     return (
         <View style={homeHeaderStyles.mainContainer}>
             <SafeAreaView />
@@ -17,7 +21,7 @@ const HomeHeader = () => {
                     <Icon name="menu" size={22} color="#fff" iconFamily="Ionicons" />
                 </TouchableOpacity>
                 <Image source={logo} style={homeHeaderStyles.logo} />
-                <TouchableOpacity onPress={() =>  {} }>
+                <TouchableOpacity onPress={() =>  setShowQr(true) }>
                     <Image source={profile} style={homeHeaderStyles.profile} />
                 </TouchableOpacity>
             </View>
@@ -43,6 +47,7 @@ const HomeHeader = () => {
                 />
 
             </Svg>
+            {showQr && <QRGenerateModal visible={showQr} onClose={() => setShowQr(false)} />}
 
         </View>
     );

@@ -2,9 +2,12 @@ import { View, TouchableOpacity } from 'react-native';
 import Icon from '../global/Icon';
 import { navigate } from '../../utils/NavigationUtil';
 import { bottomTabStyles } from '../../styles/bottomTabStyle';
+import { useState } from 'react';
+import QRScannerModal from '../modals/QRScannerModal';
 
 
 const AbsoluteQRBottom = () => {
+    const [isQrModalVisible, setIsQrModalVisible] = useState(false);
 
     return (
         <>
@@ -14,7 +17,7 @@ const AbsoluteQRBottom = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={bottomTabStyles.qrCode}
-                    onPress={() => {}}
+                    onPress={() => setIsQrModalVisible(true)}
                 >
                     <Icon name="qrcode-scan" iconFamily="MaterialCommunityIcons" color="#fff" size={24} />
                 </TouchableOpacity>
@@ -22,7 +25,9 @@ const AbsoluteQRBottom = () => {
                     <Icon name="beer-sharp" iconFamily="Ionicons" color="#333" size={24} />
                 </TouchableOpacity>
             </View>
-
+            {
+                isQrModalVisible && <QRScannerModal visible={isQrModalVisible} onClose={() => setIsQrModalVisible(false)} />
+            }
         </>
 
     );
