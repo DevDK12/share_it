@@ -1,0 +1,46 @@
+dep:
+  #_ utilities 
+  - buffer
+  - uuid
+  - immer
+  - zustand
+  - react-native-get-random-values
+
+  #_ Navigation
+  - "@react-navigation/native-stack"
+  - react-native-screens
+
+  #_ UI
+  - lottie-react-native
+  - react-native-reanimated
+  - react-native-linear-gradient
+  - react-native-responsive-fontsize
+  - react-native-svg
+  - react-native-svg-transformer
+  - react-native-safe-area-context
+  - react-native-vector-icons
+  # - react-native-responsive-hook
+  # - react-native-responsive-screen
+
+
+  #_ Native
+  - react-native-device-info
+  - react-native-fs
+  - react-native-vision-camera
+  - react-native-image-picker
+  - react-native-document-picker
+  - react-native-gesture-handler
+  - react-native-permissions
+
+  #_ Database
+  - react-native-mmkv
+
+  #_ Project specific
+  - react-native-network-info
+  - react-native-blob-util
+  - react-native-qrcode-svg
+  - react-native-tcp-socket
+  - react-native-udp
+
+dev:
+  - "@types/react-native-vector-icons"

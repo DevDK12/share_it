@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>share_it</string>
+	<string>Share it!</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,16 +24,80 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+
+	<!-- 
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
+	<string/> 
+	-->
+
+
+	<!--_ App Transport Security Settings (ATS) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!--* Disable non secure load i.e. https only -->
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
+	<!--_ Local Network Usage -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow so that you can connect to nearby devices</string>
+
+	<!--_ Bonjour Services -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
+
+	<!--_ Privacy Usage -->
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Your app needs access to documents to save files.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Your app needs access to documents to save files.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Your app needs access to documents to save files.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>$(PRODUCT_NAME) needs access to your Camera.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Your app needs access to documents to save files.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>$(PRODUCT_NAME) needs access to your Microphone.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library, files.</string>
+
+	<!--_ Set up font family -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>Okra-Bold.ttf</string>
+		<string>Okra-ExtraBold.ttf</string>
+		<string>Okra-Medium.ttf</string>
+		<string>Okra-MediumLight.ttf</string>
+		<string>Okra-Regular.ttf</string>
+		<string>MaterialIcons.ttf</string>
+		<string>Ionicons.ttf</string>
+		<string>MaterialCommunityIcons.ttf</string>
+	</array>
+
+	<!--_ Enabling File sharing -->
+	<!--* via iTunes (or Finder on macOS). -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+
+
+
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
