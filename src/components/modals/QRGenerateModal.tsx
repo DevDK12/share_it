@@ -3,6 +3,7 @@ import { View, Modal, TouchableOpacity, Image } from 'react-native';
 import { modalStyles } from '../../styles/modalStyles';
 import Icon from '../global/Icon';
 import CustomText from '../global/CustomText';
+import DeviceInfo from 'react-native-device-info';
 
 import { ActivityIndicator } from 'react-native';
 import Animated, {
@@ -15,6 +16,8 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import { multiColor } from '../../utils/Constants';
+import { navigate } from '../../utils/NavigationUtil';
+import { getLocalIPAddress } from '../../utils/networkUtils';
 
 type QRGenerateModalProps = {
     visible: boolean;
@@ -22,6 +25,9 @@ type QRGenerateModalProps = {
 };
 
 const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
+
+    const isConnected = false;
+    const server = null;
 
     const [loading, setLoading] = useState(false);
     const [qrValue, setQrValue] = useState('Dev');
@@ -33,7 +39,51 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
 
     useEffect(()=>{
 
-    },[visible])
+        shimmerTranslateX.value = withRepeat(
+            withTiming(300, {
+                duration: 1500,
+                easing: Easing.linear,
+            }),
+            -1,
+            false
+        );
+
+        //_ Start server
+        if(visible){
+            setLoading(true);
+            setupServer();
+        }
+    },[visible]);
+
+
+    const setupServer = async () => {
+        const deviceName = await DeviceInfo.getDeviceName();
+        const ip = await getLocalIPAddress();
+        const port = 4000;
+        if(server){
+            setQrValue(`tcp://${ip}:${port}|${deviceName}`);
+            setLoading(false);
+            return;
+        }
+        
+        // startServer(port);
+        setQrValue(`tcp://${ip}:${port}|${deviceName}`);
+        console.log(`Server info : ${ip}:${port}|${deviceName}`);
+        setLoading(false);
+
+    }
+
+
+    //_ On Device connected to server
+    useEffect(() => {
+        console.log('isConnected updated to: ', isConnected);
+        if(isConnected){
+            onClose();
+            navigate('ConnectionScreen');
+        }
+    
+    }, [isConnected])
+    
 
     useEffect(()=>{
         shimmerTranslateX.value = withRepeat(
