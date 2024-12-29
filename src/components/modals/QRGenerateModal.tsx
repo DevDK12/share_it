@@ -18,6 +18,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { multiColor } from '../../utils/Constants';
 import { navigate } from '../../utils/NavigationUtil';
 import { getLocalIPAddress } from '../../utils/networkUtils';
+import { useTCP } from '../../service/TCPProvider';
 
 type QRGenerateModalProps = {
     visible: boolean;
@@ -26,8 +27,7 @@ type QRGenerateModalProps = {
 
 const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
 
-    const isConnected = false;
-    const server = null;
+    const {isConnected, startServer, server} = useTCP();
 
     const [loading, setLoading] = useState(false);
     const [qrValue, setQrValue] = useState('Dev');
@@ -66,7 +66,7 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
             return;
         }
         
-        // startServer(port);
+        startServer(port);
         setQrValue(`tcp://${ip}:${port}|${deviceName}`);
         console.log(`Server info : ${ip}:${port}|${deviceName}`);
         setLoading(false);

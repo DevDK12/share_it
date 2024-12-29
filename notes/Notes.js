@@ -148,3 +148,8 @@
 //*    clean-ultimate : npm run clean-npm && npm run clean-watchman && npm run clean-jest && npm run clean-metro"
 
 //_ Now run "npm i && npm run reset-cache"
+
+
+
+//? Generating Self signed SSL certificate: 
+//* Go to 'react-native-tcp-socket' and follow instructions

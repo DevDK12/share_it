@@ -15,6 +15,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import { modalStyles } from '../../styles/modalStyles';
 import { navigate } from '../../utils/NavigationUtil';
+import { useTCP } from '../../service/TCPProvider';
 
 type QRScannerModalProps = {
     visible: boolean;
@@ -23,7 +24,7 @@ type QRScannerModalProps = {
 
 const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
 
-    const isConnected = false;
+    const {isConnected, connectToServer} = useTCP();
     const [isCameraLoading, setIsCameraLoading] = useState(true);
     const [codeFound, setCodeFound] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
@@ -72,7 +73,7 @@ const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
         const [host, port] = connectionData?.split([":"]);
 
         //_ Connect to Server
-        // connectToServer(host, parseInt(port, 10), deviceName);
+        connectToServer(host, parseInt(port, 10), deviceName);
     }
 
     //_ On Connecting to Server
