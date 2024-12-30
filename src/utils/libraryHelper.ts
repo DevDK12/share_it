@@ -50,3 +50,50 @@ export const formatFileSize = (sizeInBytes: number): string => {
         return sizeInBytes + ' B';
     }
 };
+
+
+
+
+
+
+
+export interface IPosition {
+    x: number,
+    y: number,
+}
+export interface IGetRandomPositionProps {
+    radius: number,
+    existingPositions: IPosition[],
+    minDistance: number
+}
+
+export const getRandomPosition = ({ radius, existingPositions, minDistance }: IGetRandomPositionProps): IPosition => {
+    let position:IPosition;
+    let isOverlapping:boolean;
+
+    //_ Circle Position Formula
+    //* (x,y) : (  r * cos(theta)  , r * sin(theta)  )
+    //* where r varies  [50 , radius]
+
+    do{
+        const degree = Math.random() * 360; //* Angle in degrees
+        const theta = (degree * Math.PI) / 180; //* Angle in radians
+
+        const r = Math.random() * (radius - 50) + 50; //* Radius varies from 50 to radius
+
+        const x = r * Math.cos(theta);
+        const y = r * Math.sin(theta);
+
+        position = { x, y };
+
+        //* Overlapping : Min dist b/w center of two points  <  minDistance
+        isOverlapping = existingPositions.some((pos) => {
+            const dx = pos.x - position.x;
+            const dy = pos.y - position.y;
+            return Math.sqrt(dx*dx + dy*dy) < minDistance;
+        })
+    }
+    while(isOverlapping);
+    
+    return position;
+}

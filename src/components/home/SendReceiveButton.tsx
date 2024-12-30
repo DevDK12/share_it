@@ -1,6 +1,7 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { screenHeight } from '../../utils/Constants';
 import { Image } from 'react-native';
+import { navigate } from '../../utils/NavigationUtil';
 
 const sendImg = require('../../assets/icons/send1.jpg');
 const receiveImg = require('../../assets/icons/receive1.jpg');
@@ -10,7 +11,7 @@ const SendReceiveButton = () => {
         <View style={styles.container}>
             <TouchableOpacity 
                 style={styles.button}
-                onPress={() =>{}}
+                onPress={() =>navigate('SendScreen')}
             >
                 <Image 
                     style={styles.img} 
@@ -19,7 +20,7 @@ const SendReceiveButton = () => {
             </TouchableOpacity>
             <TouchableOpacity 
                 style={styles.button}
-                onPress={() =>{}}
+                onPress={() =>navigate('RecieveScreen')}
             >
                 <Image 
                     style={styles.img} 
