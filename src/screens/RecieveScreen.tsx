@@ -1,4 +1,4 @@
-import { View, SafeAreaView, TouchableOpacity, Image} from 'react-native'
+import { View, SafeAreaView, TouchableOpacity, Image, Platform} from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import { sendStyles } from '../styles/sendStyles'
 import Icon from '../components/global/Icon'
@@ -6,11 +6,14 @@ import CustomText from '../components/global/CustomText'
 import BreakerText from '../components/ui/BreakerText'
 import { Colors } from '../utils/Constants'
 import LottieView from 'lottie-react-native'
-import { useEffect, useState } from 'react'
+import {  useEffect, useRef, useState } from 'react'
 import BackBtn from '../components/ui/BackBtn'
 import { useTCP } from '../service/TCPProvider'
-import { navigate } from '../utils/NavigationUtil'
+import { goBack, navigate } from '../utils/NavigationUtil'
+import dgram from 'react-native-udp'
 import QRGenerateModal from '../components/modals/QRGenerateModal'
+import { getBroadcastIPAddress, getLocalIPAddress } from '../utils/networkUtils'
+import DeviceInfo from 'react-native-device-info'
 
 
 
@@ -18,13 +21,116 @@ import QRGenerateModal from '../components/modals/QRGenerateModal'
 const RecieveScreen = () => {
 
     const [showQR, setShowQR] = useState(false);
-    const {isConnected} = useTCP();
+    const [qrValue, setQrValue] = useState('');
+    const {isConnected, startServer, server} = useTCP();
+
+    //_ Interval ref
+    //* Persists across re-renders and does not trigger re-render (unlike useState)
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+
+    const handleGoBack = () => {
+        if(intervalRef.current){
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        };
+        goBack();
+    }
+
+
+    //_ Starting Server on component mount
+    const setupServer = async () => {
+        const deviceName = await DeviceInfo.getDeviceName();
+        const ip = await getLocalIPAddress();
+        const port = 4000;
+        if(server){
+            setQrValue(`tcp://${ip}:${port}|${deviceName}`);
+            console.log(`Server info : ${ip}:${port}|${deviceName}`);
+            return;
+        }
+        
+        startServer(port);
+        setQrValue(`tcp://${ip}:${port}|${deviceName}`);
+        console.log(`Server info : ${ip}:${port}|${deviceName}`);
+    };
+
+    
+    useEffect(()=>{
+        setupServer();
+    },[]);
+
+
+
+
+    //_ Broadcasting Discovery Packet 
+    //* We broadcast discovery packet within same network to broadcastAddress (i.e. network Address + .255 )
+    //*     Eg if IP address = 192.168.1.2 then broadcast address = 192.168.1.255
+    //*         network address = 192.168.1         host address = x.x.x.2       broadcast address = x.x.x.255    
+
+    //- Dont use useCallback here
+    const broadcastDiscoveryPacket = async () => {
+        const deviceName = await DeviceInfo.getDeviceName();
+        const broadcastAddress = await getBroadcastIPAddress();
+        const targetAddress = broadcastAddress || "255.255.255.255"; //* fallback broadcast address
+        const port = 57143;
+
+        const clientSocket = dgram.createSocket({
+            type: 'udp4',
+            reusePort: true,
+            debug: true,
+        });
+
+        clientSocket.bind(()=>{
+            try{
+                if(Platform.OS === 'ios'){
+                    clientSocket.setBroadcast(true);
+                }
+                clientSocket.send(`${qrValue}`,0,`${qrValue}`.length, port, targetAddress, (err) => {
+                    if(err){
+                        console.log('Error broadcasting discovery signal', err);
+                    }
+                    else{
+                        console.log(`${deviceName} sent Discovery signal to ${targetAddress}`);
+                    }
+                    clientSocket.close();
+                })
+            }
+            catch(err){
+                console.log('Error binding client', err);
+                clientSocket.close();
+            }
+        })
+    }
+
+
+    //* Discovery packet is broadcasted on every 3 sec 
+    //* (after  component mount once qrValue is generated i.e. server started)
+    useEffect(()=>{
+        if(!qrValue) return;
+
+        broadcastDiscoveryPacket();
+        intervalRef.current = setInterval(broadcastDiscoveryPacket, 3000);
+
+        return () => {
+            if(intervalRef.current){
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            };
+        }
+    },[qrValue])
+
+
+
 
 
 
     useEffect(()=>{
         if(isConnected){
             navigate('ConnectionScreen');
+            if(intervalRef.current){
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            };
         }
     },[isConnected]);
 
@@ -38,7 +144,7 @@ const RecieveScreen = () => {
         >
             <SafeAreaView />
 
-            <BackBtn />
+            <BackBtn onPress={handleGoBack} />
 
             <View style={sendStyles.mainContainer}>
                 <View style={sendStyles.infoContainer}>

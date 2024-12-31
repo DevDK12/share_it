@@ -14,10 +14,10 @@ import {produce} from 'immer';
 import { getRandomPosition, IPosition } from '../utils/libraryHelper'
 import { useTCP } from '../service/TCPProvider'
 import { navigate } from '../utils/NavigationUtil'
+import dgram from 'react-native-udp'
+import UdpSocket from 'react-native-udp/lib/types/UdpSocket'
 
 
-
-const deviceNames = ['Oppo', 'Vivo X1', 'Redmi', 'Samsung S21', 'iphone 14', 'OnePlus 9'];
 
 interface Device {
     id: string,
@@ -36,31 +36,39 @@ const SendScreen = () => {
 
 
 
+    //_ Listening for UDP Discovery packets
 
+    const listenForDevices = async () => {
+        const serverSocket = dgram.createSocket({
+            type: 'udp4',
+            reusePort: true,
+            debug: true,
+        });
+        const port = 57143;
+        serverSocket.bind(port, () => {
+            console.log('UDP Server Listening for nearby devices on port: ', port);
+        });
 
-    const connectToDevice = (address: string) => {
-        //_ Address to connect 
-        //* tcp://192.168.1.1:1234|DeviceName (tcp://host:port|deviceName)
+        serverSocket.on('message', (msg, rinfo) => {
 
-        const [connectionData, deviceName] = address.replace('tcp://', '').split('|');
-        const [host, port] = connectionData.split(":");
+            const address = msg?.toString();
+            const [ _, otherDevice] = address?.replace('tcp://','').split('|');
 
-        //_ Connect to Server
-        connectToServer(host, parseInt(port, 10), deviceName);
-    }
+            // msg.toString() : tcp://192.168.1.4:4000|Dev DK
+            // rinfo : {"address": "192.168.1.4", "family": "IPv4", "port": 41981, "size": 0, "ts": 1735663357875}
 
+            
+            setNearByDevices((prev) => {
+                const deviceExists = prev?.some(device => device?.name === otherDevice);
 
-    useEffect(()=>{
-        if(nearByDevices.length > 8) return;
-        const timer = setTimeout(() => {
+                if(deviceExists) return prev;
 
-            setNearByDevices((prev) => 
-                produce(prev, (draftDevice: Device[]) => {
+                return produce(prev, (draftDevice: Device[]) => {
                     draftDevice.push({
                         id: `${Date.now()}_${Math.random()}`,
-                        name: deviceNames[Math.floor(Math.random() * deviceNames.length)],
+                        name: otherDevice,
                         image: require('../assets/icons/device.jpg'),
-                        fullAddress: 'Address',
+                        fullAddress: address,
                         position: getRandomPosition({ radius: 150, existingPositions: (prev.map((device) => device.position)), minDistance: 50 }),
                         scale: new Animated.Value(0),
                     })
@@ -74,13 +82,42 @@ const SendScreen = () => {
                         useNativeDriver: true,
                     }).start();
                 })
-            );
+            });
+        });
 
+        return serverSocket;
+    }
+
+
+    useEffect(()=>{
+        let udpServerSocket: UdpSocket;
+        const setupServer = async () => {
+            udpServerSocket = await listenForDevices();
         }
-        ,2000);
 
-        return () => clearTimeout(timer);
-    },[nearByDevices]);
+        setupServer();
+
+        return () => {
+            if(udpServerSocket){
+                udpServerSocket.close(() => {
+                    console.log('UDP Server Closed');
+                });
+            }
+            setNearByDevices([]);
+        }
+    },[])
+
+
+    const connectToDevice = (address: string) => {
+        //_ Address to connect 
+        //* tcp://192.168.1.1:1234|DeviceName (tcp://host:port|deviceName)
+
+        const [connectionData, deviceName] = address.replace('tcp://', '').split('|');
+        const [host, port] = connectionData.split(":");
+
+        //_ Connect to Server
+        connectToServer(host, parseInt(port, 10), deviceName);
+    }
 
 
 
