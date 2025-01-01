@@ -12,6 +12,8 @@ import DisconnectBtn from '../components/connection/DisconnectBtn'
 import SentBtn from '../components/connection/SentBtn'
 import RecieveBtn from '../components/connection/RecieveBtn'
 import { formatFileSize } from '../utils/libraryHelper'
+import { Asset } from 'react-native-image-picker'
+import { DocumentPickerResponse } from 'react-native-document-picker'
 
 const ConnectionScreen = () => {
 
@@ -30,7 +32,15 @@ const ConnectionScreen = () => {
     }
 
 
+    const handleMediaPickedUp = (image: Asset) => {
+        console.log("Picked image: ", image);
+        //* Send image to the connected device
+    }
 
+    const handleFilePickedUp = (file: DocumentPickerResponse[]) => {
+        console.log("Picked file: ", file);
+        //* Send file to the connected device
+    }
 
 
 
@@ -56,7 +66,11 @@ const ConnectionScreen = () => {
                         <DisconnectBtn />
                     </View>
 
-                    <Options />
+                    <Options 
+                        isHome={false}
+                        onFilePickedUp={handleFilePickedUp}
+                        onMediaPickedUp={handleMediaPickedUp}
+                    />
 
                     <View style={connectionStyles.fileContainer}>
 

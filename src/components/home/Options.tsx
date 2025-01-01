@@ -4,14 +4,45 @@ import { Colors } from 'react-native/Libraries/NewAppScreen';
 import Icon from '../global/Icon';
 import CustomText from '../global/CustomText';
 import { optionStyles } from '../../styles/optionsStyles';
+import { useTCP } from '../../service/TCPProvider';
+import { navigate } from '../../utils/NavigationUtil';
+import { DocumentPickerResponse } from 'react-native-document-picker';
+import { Asset } from 'react-native-image-picker';
+import { pickDocument, pickImage } from '../../utils/libraryHelper';
+
+
 
 type OptionsProps = {
     isHome?: boolean;
+    onMediaPickedUp?: (media: Asset) => void;
+    onFilePickedUp?: (file: DocumentPickerResponse[]) => void;
 };
-const Options: FC<OptionsProps> = ({ isHome }) => {
+const Options: FC<OptionsProps> = ({ isHome, onMediaPickedUp, onFilePickedUp }) => {
+
+    const {isConnected} = useTCP();
+
+
+    //_ Options will open file picker 
+    //* But only if user is at Connection screen else it will force to make connection first
+    //* by sending to Send Screen 
 
     const handleUniversalPicker = async (type: string) => {
+        if(isHome){
+            if(isConnected){
+                navigate("ConnectionScreen");
+            }
+            else{
+                navigate('SendScreen');
+            }
+            return;
+        }
 
+        if(type === 'images' && onMediaPickedUp){
+            pickImage(onMediaPickedUp);
+        }
+        if(type === 'file' && onFilePickedUp){
+            pickDocument(onFilePickedUp);
+        }
     };
 
     return (

@@ -1,3 +1,7 @@
+import { launchImageLibrary, Asset, ImagePickerResponse } from 'react-native-image-picker';
+import DocumentPicker, {
+    DocumentPickerResponse,
+} from 'react-native-document-picker';
 import { PermissionsAndroid, Platform } from "react-native";
 import { PERMISSIONS, request, RESULTS } from "react-native-permissions";
 
@@ -68,14 +72,14 @@ export interface IGetRandomPositionProps {
 }
 
 export const getRandomPosition = ({ radius, existingPositions, minDistance }: IGetRandomPositionProps): IPosition => {
-    let position:IPosition;
-    let isOverlapping:boolean;
+    let position: IPosition;
+    let isOverlapping: boolean;
 
     //_ Circle Position Formula
     //* (x,y) : (  r * cos(theta)  , r * sin(theta)  )
     //* where r varies  [50 , radius]
 
-    do{
+    do {
         const degree = Math.random() * 360; //* Angle in degrees
         const theta = (degree * Math.PI) / 180; //* Angle in radians
 
@@ -90,10 +94,56 @@ export const getRandomPosition = ({ radius, existingPositions, minDistance }: IG
         isOverlapping = existingPositions.some((pos) => {
             const dx = pos.x - position.x;
             const dy = pos.y - position.y;
-            return Math.sqrt(dx*dx + dy*dy) < minDistance;
+            return Math.sqrt(dx * dx + dy * dy) < minDistance;
         })
     }
-    while(isOverlapping);
-    
+    while (isOverlapping);
+
     return position;
 }
+
+
+
+
+
+type MediaPickedCallback = (media: Asset) => void;
+type FilePickedCallback = (file: DocumentPickerResponse[]) => void;
+
+export const pickImage = (onMediaPickedUp: MediaPickedCallback) => {
+    launchImageLibrary(
+        {
+            mediaType: 'photo',
+            quality: 1,
+            includeBase64: false,
+        },
+        (response: ImagePickerResponse) => {
+            if (response.didCancel) {
+                console.log('User canceled image picker');
+            } else if (response.errorCode) {
+                console.log('ImagePicker Error: ', response.errorMessage);
+            } else {
+                const { assets } = response;
+                if (assets && assets.length > 0) {
+                    const selectedImage = assets[0];
+                    onMediaPickedUp(selectedImage);
+                }
+            }
+        },
+    );
+};
+
+export const pickDocument = (onFilePickedUp: FilePickedCallback) => {
+    DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+    })
+        .then((res: any) => {
+            onFilePickedUp(res[0]);
+        })
+        .catch((err: any) => {
+            if (DocumentPicker.isCancel(err)) {
+                console.log('User canceled document picker');
+            } else {
+                console.log('DocumentPicker Error: ', err);
+            }
+        });
+};
