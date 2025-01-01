@@ -58,6 +58,7 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 keystore : require('../../tls_certs/server-keystore.p12'),
             }, 
             (socket) => {
+                //_ This gets activated when client connects to server
                 console.log('Client connected : ' , socket.address());
 
                 setServerSocket(socket);
@@ -67,9 +68,9 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 socket.readableHighWaterMark = 1024 * 1024 * 1;
                 socket.writableHighWaterMark = 1024 * 1024 * 1;
 
-                socket.on('data', async (data) => {
+                socket.on('data', (data) => {
                     const parsedData = JSON.parse(data?.toString());
-
+                    console.log('Data Received from client : ', parsedData);
                     if(parsedData?.event === 'connect'){
                         setIsConnected(true);
                         setOppositeConnectedDevice(parsedData?.deviceName);
@@ -119,7 +120,18 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                     setIsConnected(true)
                     setOppositeConnectedDevice(deviceName);
                     const myDeviceName = DeviceInfo.getDeviceNameSync()
-                    newClient.write(JSON.stringify({event: 'connect', deviceName: myDeviceName}));
+                    newClient.write(JSON.stringify(
+                        {
+                            event: 'connect', 
+                            deviceName: myDeviceName
+                        },
+                    ),
+                    'utf8',
+                    (err) => {
+                        if(err) console.log('Error in sending connect data : ', err);
+                        console.log('Connect Data sent to server');
+                    }
+                );
             }
         )
 
@@ -155,18 +167,21 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
 
 
     //_ Disconnecting 
-    const disconnect = useCallback(() => {
+    const disconnect = () => {
         if(clientSocket){
             clientSocket.destroy();
+            setClientSocket(null);
         }
         if(serverSocket){
             serverSocket.destroy();
+            setServerSocket(null);
         }
         if(server){
             server.close();
+            setServer(null);
         }
         setIsConnected(false);
-    },[clientSocket, server]);
+    };
 
 
     return (

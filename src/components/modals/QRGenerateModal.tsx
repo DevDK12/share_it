@@ -47,7 +47,8 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
             -1,
             false
         );
-
+        
+        console.log('QRGenerateModal visible: ', visible);
         //_ Start server
         if(visible){
             setLoading(true);

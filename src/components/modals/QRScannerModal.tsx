@@ -104,7 +104,7 @@ const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
             console.log(`Scanned ${codes?.length} codes!`);
             if(codes?.length > 0){
                 const scannedData = codes[0].value;
-                console.log(scannedData);
+                console.log('Scanned Data : ',scannedData);
                 setCodeFound(true);
 
                 //* Extract host, port, device, and connection data from scanned code
