@@ -5,8 +5,8 @@ import { produce } from "immer";
 import { Asset } from "react-native-image-picker";
 import { DocumentPickerResponse } from "react-native-document-picker";
 import { Alert, Platform } from "react-native";
-import { IFile, TSetRecievedFiles, TSetSentFiles } from "../types/TCPProviderTypes";
-import { IRecieverChunkStore, ISenderChunkStore, TSetRecieverChunkStore, TSetSenderChunkStore } from "../types/chunkStoreTypes";
+import { IFile, TSetReceivedFiles, TSetSentFiles, TSetTotalReceivedBytes, TSetTotalSentBytes } from "../types/TCPProviderTypes";
+import { useChunkStore } from "../db/chunkStore";
 
 
 
@@ -20,24 +20,30 @@ type TTransmitFileMeta = {
     file: Asset | DocumentPickerResponse;
     type: 'image' | 'file';
     socket: TLSSocket | null;
-    senderChunkStore: ISenderChunkStore | null;
     setSentFiles: TSetSentFiles;
-    setSenderChunkStore: TSetSenderChunkStore;
 }
-export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSenderChunkStore, senderChunkStore} : TTransmitFileMeta) => {
+export const transmitFileMeta = async ({
+        file, 
+        type, 
+        socket, 
+        setSentFiles, 
+    } : TTransmitFileMeta) => {
+
+    //_ Don't use 'useChunkStore()' here as it can't be used outside of a component
+    const { setSenderChunkStore, senderChunkStore } = useChunkStore.getState();
     
     if(senderChunkStore != null){
         Alert.alert("Wait for Current file to be sent!")
         return;
     }
 
-    const normalizedPath = Platform.OS === 'ios' ? file?.uri?.replace('file://', '') : file?.uri;
+
+    const normalizedPath = Platform.OS === 'ios' ? file?.uri : file?.uri?.replace('file://', '');
     console.log("Normalized Path: ", normalizedPath);
 
     let fileData:string;
     try{
         fileData = await RNFS.readFile(normalizedPath!, 'base64');
-
     }
     catch(e){
         console.log("Returning bcz Error in reading file : ", e);
@@ -60,7 +66,6 @@ export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSen
         offset += CHUNK_SIZE;
         totalChunks += 1;
     }
-
 
     const fileName = type === 'file' ? (file as DocumentPickerResponse)?.name : (file as Asset)?.fileName;
     const fileSize = type === 'file' ? (file as DocumentPickerResponse)?.size : (file as Asset)?.fileSize;
@@ -85,12 +90,14 @@ export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSen
         totalChunks,
     })
 
+    console.log('transmitFileMeta updating senderChunkStore: ', senderChunkStore);
+
 
     setSentFiles((files: IFile[]) => (
         produce(files, (draftFile: IFile[]) => {
             draftFile.push({
                 ...metaData,
-                uri: file.uri!,
+                uri: normalizedPath!,
             })
         })
     ))
@@ -103,12 +110,16 @@ export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSen
 
     try{
         console.log("File Acknowledgement Sending... ");
+        
         socket.write(JSON.stringify({
             event: 'file_ack',
             data: metaData,
         }), 'utf8', (err) => {
-            if(err) console.log("Error in sending file meta data : ", err);
-            else console.log("File Meta Data sent successfully ✅");
+            if(err){
+                console.log("Error in asking for 1st chunk : ", err);
+                return;
+            }
+            console.log("1st Chunk successfully asked ✅");
         });
     }
     catch(e){
@@ -127,13 +138,17 @@ export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSen
 type TRecieveFileMeta = {
     data: IFile | null;
     socket: TLSSocket | null;
-    recieverChunkStore: IRecieverChunkStore | null;
-    setRecievedFiles: TSetRecievedFiles;
-    setRecieverChunkStore: TSetRecieverChunkStore;
+    setReceivedFiles: TSetReceivedFiles;
 }
-export const recieveFileMeta = async ({data, socket, setRecievedFiles, setRecieverChunkStore, recieverChunkStore} : TRecieveFileMeta) => {
+export const recieveFileMeta = async ({
+        data, 
+        socket, 
+        setReceivedFiles, 
+    } : TRecieveFileMeta) => {
+
+    const { receiverChunkStore, setReceiverChunkStore } = useChunkStore.getState();
     
-    if(recieverChunkStore){
+    if(receiverChunkStore){
         Alert.alert("There are files which need to be received Wait Bro!")
         return;
     }
@@ -143,7 +158,7 @@ export const recieveFileMeta = async ({data, socket, setRecievedFiles, setReciev
         return;
     }
 
-    setRecieverChunkStore({
+    setReceiverChunkStore({
         id: data?.id,
         totalChunks: data.totalChunks,
         name: data.name,
@@ -153,7 +168,7 @@ export const recieveFileMeta = async ({data, socket, setRecievedFiles, setReciev
     });
 
 
-    setRecievedFiles((files: IFile[]) => (
+    setReceivedFiles((files: IFile[]) => (
         produce(files, (draftFile: IFile[]) => {
             draftFile.push(data);
         })
@@ -173,8 +188,11 @@ export const recieveFileMeta = async ({data, socket, setRecievedFiles, setReciev
             event: 'send_chunk_ack',
             chunkNo: 0,
         }), 'utf8', (err) => {
-            if(err) console.log("Error in asking for 1st chunk : ", err);
-            else console.log("1st Chunk successfully asked ✅");
+            if(err){
+                console.log("Error in asking for 1st chunk : ", err);
+                return;
+            }
+            console.log("1st Chunk successfully asked ✅");
         });
     }
     catch(e){

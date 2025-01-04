@@ -15,12 +15,10 @@ import { formatFileSize } from '../utils/libraryHelper'
 import { Asset } from 'react-native-image-picker'
 import { DocumentPickerResponse } from 'react-native-document-picker'
 import { transmitFileMeta } from '../service/TCPUtils'
-import { useChunkStore } from '../db/chunkStore'
 
 const ConnectionScreen = () => {
 
-    const { oppositeConnectedDevice, isConnected, setSentFiles, clientSocket, serverSocket, sentFiles, recievedFiles } = useTCP();
-    const { senderChunkStore, setSenderChunkStore } = useChunkStore();
+    const { oppositeConnectedDevice, isConnected, setSentFiles, clientSocket, serverSocket, sentFiles, receivedFiles } = useTCP();
 
     const [activeTab, setActiveTab] = useState<'SENT' | 'RECEIVED'>('SENT');
 
@@ -35,34 +33,30 @@ const ConnectionScreen = () => {
     }
 
 
-    const handleMediaPickedUp = (image: Asset) => {
+    const handleMediaPickedUp = async (image: Asset) => {
+        
         console.log("Picked image: ", image);
-
         
         //* Send image to the connected device
         
-        transmitFileMeta({
+        await transmitFileMeta({
             file: image,
             type: 'image',
             setSentFiles,
-            setSenderChunkStore,
-            senderChunkStore,
             socket: clientSocket || serverSocket,
         });
     }
 
-    const handleFilePickedUp = (file: DocumentPickerResponse) => {
+    const handleFilePickedUp = async (file: DocumentPickerResponse) => {
         console.log("Picked file: ", file);
 
         
         //* Send file to the connected device
         
-        transmitFileMeta({
+        await transmitFileMeta({
             file: file,
             type: 'file',
             setSentFiles,
-            senderChunkStore,
-            setSenderChunkStore,
             socket: clientSocket || serverSocket,
         });
     }
@@ -121,9 +115,9 @@ const ConnectionScreen = () => {
 
                         {/*//_ Tab body */}
                         {
-                            (activeTab === "SENT" ? sentFiles?.length > 0 : recievedFiles?.length > 0) ? (
+                            (activeTab === "SENT" ? sentFiles?.length > 0 : receivedFiles?.length > 0) ? (
                             <FlatList
-                                data={activeTab === 'SENT' ? sentFiles : recievedFiles}
+                                data={activeTab === 'SENT' ? sentFiles : receivedFiles}
                                 // keyExtractor={(item) => item.toString()}
                                 keyExtractor={(item) => item.id}
                                 renderItem={FileContainerItem}
