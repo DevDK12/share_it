@@ -1,12 +1,20 @@
 import { TLSSocket } from "net";
-import { IRecieverChunkStore, ISenderChunkStore, TSetRecieverChunkStore, TSetSenderChunkStore } from "../db/chunkStore";
-import { IFile, TSetRecievedFiles, TSetSentFiles } from "./TCPProvider";
 import { Buffer } from 'buffer';
 import RNFS from 'react-native-fs';
 import { produce } from "immer";
 import { Asset } from "react-native-image-picker";
 import { DocumentPickerResponse } from "react-native-document-picker";
 import { Alert, Platform } from "react-native";
+import { IFile, TSetRecievedFiles, TSetSentFiles } from "../types/TCPProviderTypes";
+import { IRecieverChunkStore, ISenderChunkStore, TSetRecieverChunkStore, TSetSenderChunkStore } from "../types/chunkStoreTypes";
+
+
+
+//_ Convert file to buffer
+//_ Update ChunkStore from buffer
+//_ Update sentFiles
+//_ Send meta data to reciever via 'file_ack' event
+
 
 type TTransmitFileMeta = {
     file: Asset | DocumentPickerResponse;
@@ -16,17 +24,11 @@ type TTransmitFileMeta = {
     setSentFiles: TSetSentFiles;
     setSenderChunkStore: TSetSenderChunkStore;
 }
-
-//_ Convert file to buffer
-//_ Update ChunkStore from buffer
-//_ Update sentFiles
-//_ Send meta data to reciever via 'file_ack' event
-
 export const transmitFileMeta = async ({file, type, socket, setSentFiles, setSenderChunkStore, senderChunkStore} : TTransmitFileMeta) => {
     
     if(senderChunkStore != null){
         Alert.alert("Wait for Current file to be sent!")
-        // return;
+        return;
     }
 
     const normalizedPath = Platform.OS === 'ios' ? file?.uri?.replace('file://', '') : file?.uri;
@@ -133,7 +135,7 @@ export const recieveFileMeta = async ({data, socket, setRecievedFiles, setReciev
     
     if(recieverChunkStore){
         Alert.alert("There are files which need to be received Wait Bro!")
-        // return;
+        return;
     }
 
     if(!data){

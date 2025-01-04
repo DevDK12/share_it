@@ -125,7 +125,7 @@ const ConnectionScreen = () => {
                             <FlatList
                                 data={activeTab === 'SENT' ? sentFiles : recievedFiles}
                                 // keyExtractor={(item) => item.toString()}
-                                keyExtractor={(item) => item.name}
+                                keyExtractor={(item) => item.id}
                                 renderItem={FileContainerItem}
                                 contentContainerStyle={connectionStyles.fileList}
                             />
@@ -146,57 +146,3 @@ const ConnectionScreen = () => {
 export default ConnectionScreen;
 
 
-
-// const sentFiles = [
-//     {
-//         name: 'test1.mp4',
-//         mimeType: '.mp4',
-//         available: true,
-//         size: 1200,
-//     },
-//     {
-//         name: 'test2.jpg',
-//         mimeType: '.jpg',
-//         available: false,
-//         size: 10000,
-//     },
-//     {
-//         name: 'test3.pdf',
-//         mimeType: '.pdf',
-//         available: true,
-//         size: 400,
-//     },
-//     {
-//         name: 'test4.mp3',
-//         mimeType: '.mp3',
-//         available: false,
-//         size: 20500,
-//     },
-// ];
-
-// const receivedFiles = [
-//     {
-//         name: 'test4.jpg',
-//         mimeType: '.jpg',
-//         available: false,
-//         size: 9520,
-//     },
-//     {
-//         name: 'test3.pdf',
-//         mimeType: '.pdf',
-//         available: false,
-//         size: 54156,
-//     },
-//     {
-//         name: 'test2.mp4',
-//         mimeType: '.mp4',
-//         available: true,
-//         size: 95154,
-//     },
-//     {
-//         name: 'test1.mp3',
-//         mimeType: '.mp3',
-//         available: false,        
-//         size: 205854,
-//     },
-// ];

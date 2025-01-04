@@ -1,21 +1,10 @@
 import { create } from "zustand";
-import {Buffer} from 'buffer';
+import { IRecieverChunkStore, ISenderChunkStore, TResetReciverChunkStore, TResetSenderChunkStore, TSetRecieverChunkStore, TSetSenderChunkStore } from "../types/chunkStoreTypes";
 
 //_ Zustand Global state for ChunkStore
 
-export interface IRecieverChunkStore {
-    id: string | null;
-    name: string;
-    chunkArray: Buffer[];
-    totalChunks: number;
-};
 
-export interface ISenderChunkStore extends Omit<IRecieverChunkStore, 'name'> {}
 
-export type TSetRecieverChunkStore =  (chunkStore: IRecieverChunkStore) => void;
-export type TResetReciverChunkStore = () => void;
-export type TSetSenderChunkStore = (chunkStore: ISenderChunkStore) => void;
-export type TResetSenderChunkStore = () => void;
 
 
 interface IChunkStore { 
@@ -26,9 +15,9 @@ interface IChunkStore {
     //_ Stores chunk[] at Sender side
     senderChunkStore: ISenderChunkStore | null;
 
-    setReciverChunkStore: TSetRecieverChunkStore
+    setReciverChunkStore: TSetRecieverChunkStore;
     resetReciverChunkStore: TResetReciverChunkStore;
-    setSenderChunkStore: TSetSenderChunkStore
+    setSenderChunkStore: TSetSenderChunkStore;
     resetSenderChunkStore: TResetSenderChunkStore;
 }
 

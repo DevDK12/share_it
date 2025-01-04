@@ -5,30 +5,15 @@ import Server from "react-native-tcp-socket/lib/types/Server";
 import TLSSocket from "react-native-tcp-socket/lib/types/TLSSocket";
 import { recieveFileMeta } from "./TCPUtils";
 import { useChunkStore } from "../db/chunkStore";
+import { IFile, IParsedData, TSetRecievedFiles, TSetSentFiles } from "../types/TCPProviderTypes";
 
 
-export interface IFile{
-    id: string;
-    name: string ;
-    size: number ;
-    uri: string;
-    totalChunks: number;
-    mimeType: string;
-    available?: boolean;
-}
 
-export type TStartServer = (port: number) => void;
-export type TConnectToServer = (host: string, port: number, deviceName: string) => void;
-export type TDisconnect = () => void;
 
-export type TSetSentFiles = React.Dispatch<React.SetStateAction<IFile[]>>;
-export type TSetRecievedFiles = React.Dispatch<React.SetStateAction<IFile[]>>;
+type TStartServer = (port: number) => void;
+type TConnectToServer = (host: string, port: number, deviceName: string) => void;
+type TDisconnect = () => void;
 
-export type IParsedData = {
-    event: string;
-    data: any;
-    deviceName?: string;
-}
 
 interface TCPContextType {
     server: Server | null;
@@ -69,7 +54,7 @@ export const useTCP = () : TCPContextType => {
 
 export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
 
-    const { reciverChunkStore, setReciverChunkStore } = useChunkStore();
+    const { reciverChunkStore, setReciverChunkStore, senderChunkStore, setSenderChunkStore } = useChunkStore();
 
     const [server, setServer] = useState<Server | null>(null);
     const [clientSocket, setClientSocket] = useState<TLSSocket | null>(null);
@@ -129,6 +114,11 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                     console.log("Client Disconnected");
                     setIsConnected(false);
                     disconnect();
+
+                    setRecievedFiles([]);
+                    setSentFiles([]);
+                    setSenderChunkStore(null);
+                    setReciverChunkStore(null);
                 });
 
                 socket.on('error', (err) => console.log("Socket Error : " ,err));
@@ -218,6 +208,11 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
             console.log("Connection Closed");
             setIsConnected(false);
             disconnect();
+
+            setRecievedFiles([]);
+            setSentFiles([]);
+            setSenderChunkStore(null);
+            setReciverChunkStore(null);
         });
 
         newClient.on('error', (err) => console.log("Client Error : " ,err));
@@ -253,6 +248,11 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
             setServer(null);
         }
         setIsConnected(false);
+
+        setRecievedFiles([]);
+        setSentFiles([]);
+        setSenderChunkStore(null);
+        setReciverChunkStore(null);
     };
 
 

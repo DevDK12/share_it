@@ -6,16 +6,19 @@ import CustomText from '../global/CustomText';
 import { optionStyles } from '../../styles/optionsStyles';
 import { useTCP } from '../../service/TCPProvider';
 import { navigate } from '../../utils/NavigationUtil';
-import { DocumentPickerResponse } from 'react-native-document-picker';
-import { Asset } from 'react-native-image-picker';
 import { pickDocument, pickImage } from '../../utils/libraryHelper';
+import { Asset } from 'react-native-image-picker';
+import { DocumentPickerResponse } from 'react-native-document-picker';
 
 
+
+export type TOnMediaPickedUp = (media: Asset) => void;
+export type TOnFilePickedUp = (file: DocumentPickerResponse) => void;
 
 type OptionsProps = {
     isHome?: boolean;
-    onMediaPickedUp?: (media: Asset) => void;
-    onFilePickedUp?: (file: DocumentPickerResponse) => void;
+    onMediaPickedUp?: TOnMediaPickedUp;
+    onFilePickedUp?: TOnFilePickedUp;
 };
 const Options: FC<OptionsProps> = ({ isHome, onMediaPickedUp, onFilePickedUp }) => {
 

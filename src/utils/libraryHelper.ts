@@ -4,6 +4,8 @@ import DocumentPicker, {
 } from 'react-native-document-picker';
 import { PermissionsAndroid, Platform } from "react-native";
 import { PERMISSIONS, request, RESULTS } from "react-native-permissions";
+import {  TOnFilePickedUp, TOnMediaPickedUp } from '../components/home/Options';
+import { IPosition } from '../types/types';
 
 export const checkFilePermissions = async (platform: string) => {
     if (platform === 'android') {
@@ -61,11 +63,8 @@ export const formatFileSize = (sizeInBytes: number): string => {
 
 
 
-export interface IPosition {
-    x: number,
-    y: number,
-}
-export interface IGetRandomPositionProps {
+
+interface IGetRandomPositionProps {
     radius: number,
     existingPositions: IPosition[],
     minDistance: number
@@ -106,10 +105,7 @@ export const getRandomPosition = ({ radius, existingPositions, minDistance }: IG
 
 
 
-type MediaPickedCallback = (media: Asset) => void;
-type FilePickedCallback = (file: DocumentPickerResponse) => void;
-
-export const pickImage = (onMediaPickedUp: MediaPickedCallback) => {
+export const pickImage = (onMediaPickedUp: TOnMediaPickedUp) => {
     launchImageLibrary(
         {
             mediaType: 'photo',
@@ -132,11 +128,11 @@ export const pickImage = (onMediaPickedUp: MediaPickedCallback) => {
     );
 };
 
-export const pickDocument = (onFilePickedUp: FilePickedCallback) => {
+export const pickDocument = (onFilePickedUp: TOnFilePickedUp) => {
     DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
     })
-        .then((res: any) => {
+        .then((res: DocumentPickerResponse[]) => {
             onFilePickedUp(res[0]);
         })
         .catch((err: any) => {
