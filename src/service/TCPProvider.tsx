@@ -3,7 +3,7 @@ import TcpSocket from 'react-native-tcp-socket';
 import DeviceInfo from "react-native-device-info";
 import Server from "react-native-tcp-socket/lib/types/Server";
 import TLSSocket from "react-native-tcp-socket/lib/types/TLSSocket";
-import {   recieveFileMeta } from "./TCPUtils";
+import {  receiveChunk, recieveFileMeta, transmitChunk } from "./TCPUtils";
 import { useChunkStore } from "../db/chunkStore";
 import { IFile, IParsedData, TSetReceivedFiles, TSetSentFiles } from "../types/TCPProviderTypes";
 
@@ -23,6 +23,8 @@ interface TCPContextType {
     oppositeConnectedDevice: any;
     sentFiles: IFile[];
     receivedFiles: IFile[];
+    totalSentBytes: number;
+    totalReceivedBytes: number;
     startServer: TStartServer;
     connectToServer: TConnectToServer;
     disconnect: TDisconnect;
@@ -32,7 +34,7 @@ interface TCPContextType {
 
 const TCPContext = createContext<TCPContextType | undefined>(undefined);
 
-export const useTCP = () : TCPContextType => {
+export const useTCP = (): TCPContextType => {
     const context = useContext(TCPContext);
     if (!context) {
         throw new Error('useTCP must be used within a TCPProvider');
@@ -52,7 +54,7 @@ export const useTCP = () : TCPContextType => {
 //*     to remember which device is connected to us or to whom we are connected
 
 
-export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
+export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     const { resetSenderChunkStore, resetReceiverChunkStore } = useChunkStore();
 
@@ -64,6 +66,8 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
     const [sentFiles, setSentFiles] = useState<IFile[]>([]);
     const [receivedFiles, setReceivedFiles] = useState<IFile[]>([]);
 
+    const [totalSentBytes, setTotalSentBytes] = useState<number>(0);
+    const [totalReceivedBytes, setTotalReceivedBytes] = useState<number>(0);
 
 
 
@@ -72,12 +76,14 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
         setSentFiles([]);
         resetReceiverChunkStore();
         resetSenderChunkStore();
+        setTotalSentBytes(0);
+        setTotalReceivedBytes(0);
     }
 
 
     //_ Server side
     const startServer = useCallback((port: number) => {
-        if(server){
+        if (server) {
             console.log("Server Already running");
             return;
         }
@@ -87,7 +93,7 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
         },
             (socket) => {
                 //_ This gets activated when client connects to server
-                console.log('Client connected : ' , socket.address());
+                console.log('Client connected : ', socket.address());
 
                 setServerSocket(socket);
                 socket.setNoDelay(true);
@@ -97,13 +103,13 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 socket.writableHighWaterMark = 1024 * 1024 * 1;
 
                 socket.on('data', async (data) => {
-                    const parsedData : IParsedData = JSON.parse(data?.toString());
+                    const parsedData: IParsedData = JSON.parse(data?.toString());
 
-                    if(parsedData?.event === 'connect') {
+                    if (parsedData?.event === 'connect') {
                         setIsConnected(true);
                         setOppositeConnectedDevice(parsedData?.deviceName);
                     }
-                    if(parsedData?.event === 'file_ack'){
+                    if (parsedData?.event === 'file_ack') {
                         await recieveFileMeta({
                             data: parsedData?.data,
                             socket,
@@ -111,8 +117,23 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                         });
                     }
 
-                    if(parsedData?.event === 'send_chunk_ack'){
-                        console.log('Chunk ack received');
+                    if (parsedData?.event === 'send_chunk_ack') {
+
+                        await transmitChunk({
+                            chunkNo: parsedData?.chunkNo!,
+                            socket,
+                            setTotalSentBytes,
+                            setSentFiles,
+                        });
+                    }
+                    if (parsedData?.event === 'receive_chunk_ack') {
+                        await receiveChunk({
+                            chunk: parsedData?.chunk!,
+                            chunkNo: parsedData?.chunkNo!,
+                            socket,
+                            setTotalReceivedBytes,
+                            setReceivedFiles
+                        });
                     }
                 });
 
@@ -123,7 +144,7 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                     cleanUp();
                 });
 
-                socket.on('error', (err) => console.log("Socket Error : " ,err));
+                socket.on('error', (err) => console.log("Socket Error : ", err));
             }
         );
 
@@ -137,10 +158,11 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 console.log(`Server running on ${address?.address}:${address?.port}`);
             });
 
+
         newServer.on('error', (error) => console.error('Server Error : ', error));
         setServer(newServer);
 
-    },[server]);
+    }, [server]);
 
 
 
@@ -164,7 +186,7 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 ),
                     'utf8',
                     (err) => {
-                        if(err) console.log('Error in sending connect data : ', err);
+                        if (err) console.log('Error in sending connect data : ', err);
                         console.log('Connect Data sent to server');
                     }
                 );
@@ -181,7 +203,7 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
         newClient.on('data', async (data) => {
             const parsedData: IParsedData = JSON.parse(data?.toString());
 
-            if(parsedData?.event === 'file_ack'){
+            if (parsedData?.event === 'file_ack') {
                 await recieveFileMeta({
                     data: parsedData?.data,
                     socket: newClient,
@@ -189,13 +211,28 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 });
             }
 
-            if(parsedData?.event === 'send_chunk_ack'){
-                console.log('Chunk ack received');
+            if (parsedData?.event === 'send_chunk_ack') {
+                await transmitChunk({
+                    chunkNo: parsedData?.chunkNo!,
+                    socket: newClient,
+                    setTotalSentBytes,
+                    setSentFiles,
+                });
             }
+            if (parsedData?.event === 'receive_chunk_ack') {
+                await receiveChunk({
+                    chunk: parsedData?.chunk!,
+                    chunkNo: parsedData?.chunkNo!,
+                    socket: newClient,
+                    setTotalReceivedBytes,
+                    setReceivedFiles
+                });
+            }
+            
         });
 
 
-        newClient.on('close', ()=>{
+        newClient.on('close', () => {
             console.log("Connection Closed");
             setIsConnected(false);
             disconnect();
@@ -203,11 +240,11 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
             cleanUp();
         });
 
-        newClient.on('error', (err) => console.log("Client Error : " ,err));
+        newClient.on('error', (err) => console.log("Client Error : ", err));
 
         setClientSocket(newClient);
 
-    },[clientSocket]);
+    }, [clientSocket]);
 
 
     //_ Cleanup : Remove all listeners
@@ -220,17 +257,18 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
     }, [clientSocket, server, serverSocket]);
 
 
+
     //_ Disconnecting 
     const disconnect = () => {
-        if(clientSocket){
+        if (clientSocket) {
             clientSocket.destroy();
             setClientSocket(null);
         }
-        if(serverSocket){
+        if (serverSocket) {
             serverSocket.destroy();
             setServerSocket(null);
         }
-        if(server){
+        if (server) {
             server.close();
             setServer(null);
         }
@@ -249,6 +287,8 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
             oppositeConnectedDevice,
             sentFiles,
             receivedFiles,
+            totalSentBytes,
+            totalReceivedBytes,
             startServer,
             connectToServer,
             disconnect,

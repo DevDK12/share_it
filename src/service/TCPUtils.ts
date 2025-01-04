@@ -44,6 +44,7 @@ export const transmitFileMeta = async ({
     let fileData:string;
     try{
         fileData = await RNFS.readFile(normalizedPath!, 'base64');
+
     }
     catch(e){
         console.log("Returning bcz Error in reading file : ", e);
@@ -199,4 +200,221 @@ export const recieveFileMeta = async ({
         console.log("Error in sending chunk ack : ", e);
     }
 
+}
+
+
+
+
+
+//_ Transmits requested chunk
+//_ Updates totalSentBytes
+//_ Resets chunkStore if all chunks sent
+//_ Updates sentFiles[file] to available if all chunks sent
+
+type TTransmitChunk = {
+    chunkNo: number;
+    socket: TLSSocket | null;
+    setTotalSentBytes: TSetTotalSentBytes;
+    setSentFiles: TSetSentFiles;
+}
+
+export const transmitChunk = async ({
+        chunkNo, 
+        socket, 
+        setTotalSentBytes, 
+        setSentFiles
+    } : TTransmitChunk) => {
+
+    const { senderChunkStore, resetSenderChunkStore } = useChunkStore.getState();
+
+    if(!senderChunkStore){
+        Alert.alert("There are no chunks to be sent");
+        return;
+    }
+
+    if(!socket){
+        console.log("Socket not available");
+        return;
+    }
+
+    const totalChunks = senderChunkStore.totalChunks;
+    console.log("Total Chunks: ", totalChunks);
+
+    try{
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        socket.write(
+            JSON.stringify({
+                event: 'receive_chunk_ack',
+                chunk: senderChunkStore.chunkArray[chunkNo].toString('base64'),
+                chunkNo,
+            }),
+            'utf8',
+            (error) => {
+                if(error) {
+                    console.log(`Error in sending chunkNo. - ${chunkNo} : ${error}`);
+                    return;
+                }
+                console.log(`Chunk - ${chunkNo} sent successfully ✅`);
+            }
+        );
+
+        setTotalSentBytes((prev) => prev + senderChunkStore.chunkArray[chunkNo].length);
+
+        if(chunkNo + 2 > totalChunks){
+            console.log("All chunks sent ✅🔴");
+            setSentFiles((prevData) => 
+                produce(prevData, (draftFiles: any) => {
+                    const fileIndex = draftFiles?.findIndex((file: any) => file.id === senderChunkStore.id);
+                    if(fileIndex !== -1){
+                        draftFiles[fileIndex].available = true;
+                    }
+                })
+            );
+            resetSenderChunkStore();
+
+        }
+    }
+    catch(err){
+        console.log("Error in sending chunk : ", err);
+    }
+
+}
+
+
+
+
+
+//_ Updates chunkStore with recieved chunk
+//_ Updates totalRecievedBytes
+//_ 
+//_ Requests for next chunk
+
+
+type TReceiveChunk = {
+    chunk: string;
+    chunkNo: number;
+    socket: TLSSocket | null;
+    setTotalReceivedBytes: TSetTotalReceivedBytes;
+    setReceivedFiles: TSetReceivedFiles;
+}
+
+export const receiveChunk = async ({
+        chunk, 
+        chunkNo, 
+        socket, 
+        setTotalReceivedBytes,  
+        setReceivedFiles,
+    } : TReceiveChunk) => {
+
+    const { receiverChunkStore, setReceiverChunkStore, resetReceiverChunkStore } = useChunkStore.getState();
+    if(!receiverChunkStore){
+        console.log("Chunk Store is null");
+        return;
+    }
+
+    try {
+        const bufferChunk = Buffer.from(chunk, 'base64');
+        const updatedChunkArray = [...(receiverChunkStore.chunkArray || [])]
+        updatedChunkArray[chunkNo] = bufferChunk;
+        setReceiverChunkStore({
+            ...receiverChunkStore,
+            chunkArray: updatedChunkArray,
+
+        });
+        setTotalReceivedBytes((prevValue:number) => {
+            return prevValue + bufferChunk.length;
+        });
+
+
+    } catch (error) {
+        console.log("Error in updating chunk: ", error);
+    };
+
+    if(!socket){
+        console.log("Socket not available");
+        return;
+    }
+
+
+    if(chunkNo + 1 === receiverChunkStore?.totalChunks){
+        console.log("All chunks received ✅🔴");
+        const filePath = await generateFile();
+        // resetReceiverChunkStore();
+
+        if(!filePath){
+            console.log("Error in generating file");
+            return;
+        }
+
+        setReceivedFiles((prevFiles: IFile[]) => 
+            produce(prevFiles, (draftFiles: IFile[]) => {
+                const fileIndex = draftFiles?.findIndex((file) => file.id === receiverChunkStore.id);
+                if(fileIndex !== -1){
+                    draftFiles[fileIndex] = {
+                        ...draftFiles[fileIndex],
+                        uri: filePath,
+                        available: true,
+                    }
+                };
+            })
+        );
+
+        resetReceiverChunkStore();
+        return;
+    }
+
+
+    try{
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        console.log("Requested for next chunk  ⬇️", chunkNo + 1)
+        socket.write(JSON.stringify({event: 'send_chunk_ack', chunkNo: chunkNo + 1})
+        , 'utf8', (err) => {
+            if(err){
+                console.log("Error in asking for 1st chunk : ", err);
+                return;
+            }
+            console.log("1st Chunk successfully asked ✅");
+        });
+    }
+    catch(err){
+        console.log("Error in sending file: ", err);
+    }
+
+}
+
+
+
+
+
+//_ Generates file from chunkArray and saves it to device
+
+const generateFile = async () => {
+
+    const { receiverChunkStore } = useChunkStore.getState();
+
+    if(!receiverChunkStore){
+        console.log("No Chunks or files to process");
+        return;
+    }
+
+    if(receiverChunkStore?.totalChunks !== receiverChunkStore?.chunkArray?.length){
+        console.log("Not all chunks have been received");
+        return;
+    }
+
+    try {
+        const combinedChunks = Buffer.concat(receiverChunkStore.chunkArray);
+        const platformPath = Platform.OS === 'ios' ? `${RNFS.DownloadDirectoryPath}` : `${RNFS.DocumentDirectoryPath}`;
+        const filePath = `${platformPath}/${receiverChunkStore.name}`;
+
+        console.log("File Path after saving : ", filePath);
+        await RNFS.writeFile(filePath, combinedChunks?.toString('base64'), 'base64');
+
+        console.log("File saved successfully ✅", filePath);
+
+        return filePath;
+
+    } catch (error) {
+        console.error("Error combining chunks or saving file : ", error);
+    }
 }
