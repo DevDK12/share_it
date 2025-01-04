@@ -15,7 +15,7 @@ import { pickDocument, pickImage } from '../../utils/libraryHelper';
 type OptionsProps = {
     isHome?: boolean;
     onMediaPickedUp?: (media: Asset) => void;
-    onFilePickedUp?: (file: DocumentPickerResponse[]) => void;
+    onFilePickedUp?: (file: DocumentPickerResponse) => void;
 };
 const Options: FC<OptionsProps> = ({ isHome, onMediaPickedUp, onFilePickedUp }) => {
 

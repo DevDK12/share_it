@@ -5,7 +5,7 @@ import { connectionStyles } from '../styles/connectionStyles'
 import CustomText from '../components/global/CustomText'
 import { useTCP } from '../service/TCPProvider'
 import {  useEffect, useState } from 'react'
-import { navigate } from '../utils/NavigationUtil'
+import { resetAndNavigate } from '../utils/NavigationUtil'
 import Options from '../components/home/Options'
 import FileContainerItem from '../components/connection/FileContainerItem'
 import DisconnectBtn from '../components/connection/DisconnectBtn'
@@ -14,16 +14,19 @@ import RecieveBtn from '../components/connection/RecieveBtn'
 import { formatFileSize } from '../utils/libraryHelper'
 import { Asset } from 'react-native-image-picker'
 import { DocumentPickerResponse } from 'react-native-document-picker'
+import { transmitFileMeta } from '../service/TCPUtils'
+import { useChunkStore } from '../db/chunkStore'
 
 const ConnectionScreen = () => {
 
-    const { oppositeConnectedDevice, isConnected } = useTCP();
+    const { oppositeConnectedDevice, isConnected, setSentFiles, clientSocket, serverSocket, sentFiles, recievedFiles } = useTCP();
+    const { senderChunkStore, setSenderChunkStore } = useChunkStore();
 
     const [activeTab, setActiveTab] = useState<'SENT' | 'RECEIVED'>('SENT');
 
     useEffect(() => {
         if (!isConnected) {
-            navigate("HomeScreen");
+            resetAndNavigate("HomeScreen");
         }
     }, [isConnected]);
 
@@ -34,12 +37,34 @@ const ConnectionScreen = () => {
 
     const handleMediaPickedUp = (image: Asset) => {
         console.log("Picked image: ", image);
+
+        
         //* Send image to the connected device
+        
+        transmitFileMeta({
+            file: image,
+            type: 'image',
+            setSentFiles,
+            setSenderChunkStore,
+            senderChunkStore,
+            socket: clientSocket || serverSocket,
+        });
     }
 
-    const handleFilePickedUp = (file: DocumentPickerResponse[]) => {
+    const handleFilePickedUp = (file: DocumentPickerResponse) => {
         console.log("Picked file: ", file);
+
+        
         //* Send file to the connected device
+        
+        transmitFileMeta({
+            file: file,
+            type: 'file',
+            setSentFiles,
+            senderChunkStore,
+            setSenderChunkStore,
+            socket: clientSocket || serverSocket,
+        });
     }
 
 
@@ -96,9 +121,9 @@ const ConnectionScreen = () => {
 
                         {/*//_ Tab body */}
                         {
-                            (activeTab === "SENT" ? sentFiles?.length > 0 : receivedFiles?.length > 0) ? (
+                            (activeTab === "SENT" ? sentFiles?.length > 0 : recievedFiles?.length > 0) ? (
                             <FlatList
-                                data={activeTab === 'SENT' ? sentFiles : receivedFiles}
+                                data={activeTab === 'SENT' ? sentFiles : recievedFiles}
                                 // keyExtractor={(item) => item.toString()}
                                 keyExtractor={(item) => item.name}
                                 renderItem={FileContainerItem}
@@ -122,56 +147,56 @@ export default ConnectionScreen;
 
 
 
-const sentFiles = [
-    {
-        name: 'test1.mp4',
-        mimeType: '.mp4',
-        available: true,
-        size: 1200,
-    },
-    {
-        name: 'test2.jpg',
-        mimeType: '.jpg',
-        available: false,
-        size: 10000,
-    },
-    {
-        name: 'test3.pdf',
-        mimeType: '.pdf',
-        available: true,
-        size: 400,
-    },
-    {
-        name: 'test4.mp3',
-        mimeType: '.mp3',
-        available: false,
-        size: 20500,
-    },
-];
+// const sentFiles = [
+//     {
+//         name: 'test1.mp4',
+//         mimeType: '.mp4',
+//         available: true,
+//         size: 1200,
+//     },
+//     {
+//         name: 'test2.jpg',
+//         mimeType: '.jpg',
+//         available: false,
+//         size: 10000,
+//     },
+//     {
+//         name: 'test3.pdf',
+//         mimeType: '.pdf',
+//         available: true,
+//         size: 400,
+//     },
+//     {
+//         name: 'test4.mp3',
+//         mimeType: '.mp3',
+//         available: false,
+//         size: 20500,
+//     },
+// ];
 
-const receivedFiles = [
-    {
-        name: 'test4.jpg',
-        mimeType: '.jpg',
-        available: false,
-        size: 9520,
-    },
-    {
-        name: 'test3.pdf',
-        mimeType: '.pdf',
-        available: false,
-        size: 54156,
-    },
-    {
-        name: 'test2.mp4',
-        mimeType: '.mp4',
-        available: true,
-        size: 95154,
-    },
-    {
-        name: 'test1.mp3',
-        mimeType: '.mp3',
-        available: false,        
-        size: 205854,
-    },
-];
+// const receivedFiles = [
+//     {
+//         name: 'test4.jpg',
+//         mimeType: '.jpg',
+//         available: false,
+//         size: 9520,
+//     },
+//     {
+//         name: 'test3.pdf',
+//         mimeType: '.pdf',
+//         available: false,
+//         size: 54156,
+//     },
+//     {
+//         name: 'test2.mp4',
+//         mimeType: '.mp4',
+//         available: true,
+//         size: 95154,
+//     },
+//     {
+//         name: 'test1.mp3',
+//         mimeType: '.mp3',
+//         available: false,        
+//         size: 205854,
+//     },
+// ];

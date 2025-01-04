@@ -3,17 +3,46 @@ import TcpSocket from 'react-native-tcp-socket';
 import DeviceInfo from "react-native-device-info";
 import Server from "react-native-tcp-socket/lib/types/Server";
 import TLSSocket from "react-native-tcp-socket/lib/types/TLSSocket";
+import { recieveFileMeta } from "./TCPUtils";
+import { useChunkStore } from "../db/chunkStore";
 
 
+export interface IFile{
+    id: string;
+    name: string ;
+    size: number ;
+    uri: string;
+    totalChunks: number;
+    mimeType: string;
+    available?: boolean;
+}
+
+export type TStartServer = (port: number) => void;
+export type TConnectToServer = (host: string, port: number, deviceName: string) => void;
+export type TDisconnect = () => void;
+
+export type TSetSentFiles = React.Dispatch<React.SetStateAction<IFile[]>>;
+export type TSetRecievedFiles = React.Dispatch<React.SetStateAction<IFile[]>>;
+
+export type IParsedData = {
+    event: string;
+    data: any;
+    deviceName?: string;
+}
 
 interface TCPContextType {
     server: Server | null;
     clientSocket: TLSSocket | null;
+    serverSocket: TLSSocket | null;
     isConnected: boolean;
     oppositeConnectedDevice: any;
-    startServer: (port: number) => void;
-    connectToServer: (host: string, port: number, deviceName: string) => void;
-    disconnect: () => void;
+    sentFiles: IFile[];
+    recievedFiles: IFile[];
+    startServer: TStartServer;
+    connectToServer: TConnectToServer;
+    disconnect: TDisconnect;
+    setSentFiles: TSetSentFiles;
+    setRecievedFiles: TSetRecievedFiles;
 };
 
 const TCPContext = createContext<TCPContextType | undefined>(undefined);
@@ -40,12 +69,15 @@ export const useTCP = () : TCPContextType => {
 
 export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
 
+    const { reciverChunkStore, setReciverChunkStore } = useChunkStore();
+
     const [server, setServer] = useState<Server | null>(null);
     const [clientSocket, setClientSocket] = useState<TLSSocket | null>(null);
     const [serverSocket, setServerSocket] = useState<TLSSocket | null>(null);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [oppositeConnectedDevice, setOppositeConnectedDevice] = useState<any>(null);
-
+    const [sentFiles, setSentFiles] = useState<IFile[]>([]);
+    const [recievedFiles, setRecievedFiles] = useState<IFile[]>([]);
 
     //_ Server side
     const startServer = useCallback((port: number) => {
@@ -68,12 +100,28 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
                 socket.readableHighWaterMark = 1024 * 1024 * 1;
                 socket.writableHighWaterMark = 1024 * 1024 * 1;
 
-                socket.on('data', (data) => {
-                    const parsedData = JSON.parse(data?.toString());
-                    console.log('Data Received from client : ', parsedData);
+                socket.on('data', async (data) => {
+                    const parsedData : IParsedData = JSON.parse(data?.toString());
+                    
+                    if(parsedData)    console.log('Data Received from client : ', parsedData);
+
                     if(parsedData?.event === 'connect'){
                         setIsConnected(true);
                         setOppositeConnectedDevice(parsedData?.deviceName);
+                    }
+                    if(parsedData?.event === 'file_ack'){
+                        console.log('calling recieveFileMeta');
+                        recieveFileMeta({
+                            data: parsedData?.data,
+                            socket,
+                            setRecievedFiles,
+                            setRecieverChunkStore: setReciverChunkStore,
+                            recieverChunkStore: reciverChunkStore
+                        });
+                    }
+
+                    if(parsedData?.event === 'send_chunk_ack'){
+                        console.log('Chunk ack received');
                     }
                 });
 
@@ -142,6 +190,30 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
         newClient.writableHighWaterMark = 1024 * 1024 * 1;
 
 
+        newClient.on('data', async (data) => {
+            const parsedData : IParsedData = JSON.parse(data?.toString());
+            
+            if(parsedData)    console.log('Data Received from client : ', parsedData);
+
+
+            if(parsedData?.event === 'file_ack'){
+                console.log('calling recieveFileMeta');
+
+                recieveFileMeta({
+                    data: parsedData?.data,
+                    socket: newClient,
+                    setRecievedFiles,
+                    setRecieverChunkStore: setReciverChunkStore,
+                    recieverChunkStore: reciverChunkStore
+                });
+            }
+
+            if(parsedData?.event === 'send_chunk_ack'){
+                console.log('Chunk ack received');
+            }
+        });
+
+
         newClient.on('close', ()=>{
             console.log("Connection Closed");
             setIsConnected(false);
@@ -188,11 +260,16 @@ export const TCPProvider: FC<{children: ReactNode}> = ({children}) => {
         <TCPContext.Provider value={{
                 server,
                 clientSocket,
+                serverSocket,
                 isConnected,
                 oppositeConnectedDevice,
+                sentFiles,
+                recievedFiles,
                 startServer,
                 connectToServer,
-                disconnect
+                disconnect,
+                setSentFiles,
+                setRecievedFiles,
             }}
         >
             {children}

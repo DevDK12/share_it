@@ -107,7 +107,7 @@ export const getRandomPosition = ({ radius, existingPositions, minDistance }: IG
 
 
 type MediaPickedCallback = (media: Asset) => void;
-type FilePickedCallback = (file: DocumentPickerResponse[]) => void;
+type FilePickedCallback = (file: DocumentPickerResponse) => void;
 
 export const pickImage = (onMediaPickedUp: MediaPickedCallback) => {
     launchImageLibrary(
