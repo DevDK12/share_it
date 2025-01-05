@@ -11,11 +11,12 @@ import BackBtn from '../components/ui/BackBtn'
 import QRScannerModal from '../components/modals/QRScannerModal'
 import DeviceBtn from '../components/ui/DeviceBtn'
 import {produce} from 'immer';
-import { getRandomPosition, IPosition } from '../utils/libraryHelper'
+import { getRandomPosition } from '../utils/libraryHelper'
 import { useTCP } from '../service/TCPProvider'
 import { navigate } from '../utils/NavigationUtil'
 import dgram from 'react-native-udp'
 import UdpSocket from 'react-native-udp/lib/types/UdpSocket'
+import { IPosition } from '../types/types'
 
 
 
