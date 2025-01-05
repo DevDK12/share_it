@@ -18,7 +18,7 @@ export type TSetTotalReceivedBytes = React.Dispatch<React.SetStateAction<number>
 
 export interface IParsedData {
     event: string;
-    data: any;
+    data?: IFile | null;
     deviceName?: string;
     chunkNo?: number;
     chunk?: string;

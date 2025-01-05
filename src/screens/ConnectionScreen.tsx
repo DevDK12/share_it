@@ -18,7 +18,17 @@ import { transmitFileMeta } from '../service/TCPUtils'
 
 const ConnectionScreen = () => {
 
-    const { oppositeConnectedDevice, isConnected, setSentFiles, clientSocket, serverSocket, sentFiles, receivedFiles } = useTCP();
+    const { 
+        oppositeConnectedDevice, 
+        isConnected, 
+        setSentFiles, 
+        clientSocket, 
+        serverSocket, 
+        sentFiles, 
+        receivedFiles,
+        totalSentBytes,
+        totalReceivedBytes,
+    } = useTCP();
 
     const [activeTab, setActiveTab] = useState<'SENT' | 'RECEIVED'>('SENT');
 
@@ -102,13 +112,18 @@ const ConnectionScreen = () => {
 
                             <View style={connectionStyles.sendReceiveButtonContainer}> 
                                 <CustomText fontFamily="Okra-Bold" fontSize={9}>
-                                    {formatFileSize(263000)}
+                                    {formatFileSize(activeTab === 'SENT' ? totalSentBytes  : totalReceivedBytes)}
                                 </CustomText>
                                 <CustomText fontFamily="Okra-Bold" fontSize={12}>
                                     /
                                 </CustomText>
                                 <CustomText fontFamily="Okra-Bold" fontSize={10}>
-                                    {formatFileSize(505400)}
+                                    {formatFileSize(activeTab === 'SENT' ? 
+                                        sentFiles.reduce((total, file) => total + file.size, 0)  
+                                        : 
+                                        receivedFiles.reduce((total, file) => total + file.size, 0)
+                                    )}
+
                                 </CustomText>
                             </View>
                         </View>

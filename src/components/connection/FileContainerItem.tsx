@@ -1,28 +1,31 @@
-import { ActivityIndicator, Platform, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, ListRenderItem, Platform, TouchableOpacity, View } from 'react-native'
 import { connectionStyles } from '../../styles/connectionStyles'
 import CustomText from '../global/CustomText'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import ReactNativeBlobUtil from 'react-native-blob-util'
 import Icon from '../global/Icon'
 import { formatFileSize } from '../../utils/libraryHelper'
+import { IFile } from '../../types/TCPProviderTypes'
 
 
-const FileContainerItem = ({item}: any) => {
 
-    const renderThumbnail = (mimeType:string) => {
-        switch (mimeType) {
-            case '.mp3':
-                return <Icon name="musical-notes" size={16} color='blue' iconFamily='Ionicons' />
-            case '.mp4':
-                return <Icon name="videocam" size={16} color='green' iconFamily='Ionicons' />
-            case '.jpg':
-                return <Icon name="image" size={16} color='orange' iconFamily='Ionicons' />
-            case '.pdf':
-                return <Icon name="document" size={16} color='red' iconFamily='Ionicons' />
-            default:
-                return <Icon name="folder" size={16} color='gray' iconFamily='Ionicons' />
-        };
-    }
+export const renderThumbnail = (mimeType:string) => {
+    switch (mimeType) {
+        case '.mp3':
+            return <Icon name="musical-notes" size={16} color='blue' iconFamily='Ionicons' />
+        case '.mp4':
+            return <Icon name="videocam" size={16} color='green' iconFamily='Ionicons' />
+        case '.jpg':
+            return <Icon name="image" size={16} color='orange' iconFamily='Ionicons' />
+        case '.pdf':
+            return <Icon name="document" size={16} color='red' iconFamily='Ionicons' />
+        default:
+            return <Icon name="folder" size={16} color='gray' iconFamily='Ionicons' />
+    };
+}
+
+
+const FileContainerItem : ListRenderItem<IFile> = ({item}) => {
 
     const handleFileOpen = (uri: string) => {
         const normalizedPath = Platform.OS === 'ios' ? `file://${uri}` : uri;

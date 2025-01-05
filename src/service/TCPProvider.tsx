@@ -110,6 +110,10 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
                         setOppositeConnectedDevice(parsedData?.deviceName);
                     }
                     if (parsedData?.event === 'file_ack') {
+                        if(!parsedData?.data) {
+                            console.log("No file data received");
+                            return;
+                        }
                         await recieveFileMeta({
                             data: parsedData?.data,
                             socket,
@@ -204,6 +208,10 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             const parsedData: IParsedData = JSON.parse(data?.toString());
 
             if (parsedData?.event === 'file_ack') {
+                if(!parsedData?.data) {
+                    console.log("No file data received");
+                    return;
+                }
                 await recieveFileMeta({
                     data: parsedData?.data,
                     socket: newClient,

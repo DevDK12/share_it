@@ -339,7 +339,6 @@ export const receiveChunk = async ({
     if(chunkNo + 1 === receiverChunkStore?.totalChunks){
         console.log("All chunks received ✅🔴");
         const filePath = await generateFile();
-        // resetReceiverChunkStore();
 
         if(!filePath){
             console.log("Error in generating file");
@@ -404,13 +403,13 @@ const generateFile = async () => {
 
     try {
         const combinedChunks = Buffer.concat(receiverChunkStore.chunkArray);
-        const platformPath = Platform.OS === 'ios' ? `${RNFS.DownloadDirectoryPath}` : `${RNFS.DocumentDirectoryPath}`;
+        const platformPath = Platform.OS === 'ios' ? `${RNFS.DocumentDirectoryPath}` : `${RNFS.DownloadDirectoryPath}`;
         const filePath = `${platformPath}/${receiverChunkStore.name}`;
 
         console.log("File Path after saving : ", filePath);
         await RNFS.writeFile(filePath, combinedChunks?.toString('base64'), 'base64');
 
-        console.log("File saved successfully ✅", filePath);
+        console.log("File saved successfully ✅ to => ", filePath);
 
         return filePath;
 
