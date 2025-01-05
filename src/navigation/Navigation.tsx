@@ -7,6 +7,7 @@ import ConnectionScreen from '../screens/ConnectionScreen';
 import { TCPProvider } from '../service/TCPProvider';
 import SendScreen from '../screens/SendScreen';
 import RecieveScreen from '../screens/RecieveScreen';
+import ReceivedFilesScreen from '../screens/ReceivedFilesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +26,7 @@ const Navigation = () => {
                     <Stack.Screen name="ConnectionScreen" component={ConnectionScreen} />
                     <Stack.Screen name="SendScreen" component={SendScreen} />
                     <Stack.Screen name="RecieveScreen" component={RecieveScreen} />
+                    <Stack.Screen name="ReceivedFilesScreen" component={ReceivedFilesScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </TCPProvider>

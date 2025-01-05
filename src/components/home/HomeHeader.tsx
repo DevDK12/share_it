@@ -6,6 +6,7 @@ import Svg, {Defs, LinearGradient, Path, Stop} from 'react-native-svg';
 import Icon from '../global/Icon';
 import QRGenerateModal from '../modals/QRGenerateModal';
 import { useState } from 'react';
+import { navigate } from '../../utils/NavigationUtil';
 
 const logo = require('../../assets/images/logo_t.png');
 const profile = require('../../assets/images/profile.jpg');
@@ -17,7 +18,7 @@ const HomeHeader = () => {
         <View style={homeHeaderStyles.mainContainer}>
             <SafeAreaView />
             <View style={[commonStyles.flexRowBetween, homeHeaderStyles.container]} >
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigate('ReceivedFilesScreen')}>
                     <Icon name="menu" size={22} color="#fff" iconFamily="Ionicons" />
                 </TouchableOpacity>
                 <Image source={logo} style={homeHeaderStyles.logo} />

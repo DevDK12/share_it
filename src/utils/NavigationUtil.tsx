@@ -6,7 +6,7 @@ import {
 
 export const navigationRef = createNavigationContainerRef();
 
-type TRoute = "SplashScreen" | "HomeScreen" | "ConnectionScreen" | "SendScreen" | "RecieveScreen";
+type TRoute = "SplashScreen" | "HomeScreen" | "ConnectionScreen" | "ReceivedFilesScreen" | "SendScreen" | "RecieveScreen";
 
 export async function navigate(routeName: TRoute, params?: object) {
   navigationRef.isReady();
