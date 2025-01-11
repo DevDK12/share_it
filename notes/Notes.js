@@ -125,7 +125,17 @@
 //-     Should be used before cleaning npm
 
 //_ clean-android : 
-//*     clean-android : "rmdir /s /q android\build android\app\build android\app\.cxx"
+//*     clean-android (these are not in git) : 
+//          rmdir /s /q android\build 
+//          rmdir /s /q android\app\build 
+//          rmdir /s /q android\app\.cxx
+//          rmdir /s /q android\.gradle
+//          rmdir /s /q android\.idea
+//!         rmdir /s /q android\app\src\main\res (part of git)
+
+
+//_ Clean gradle : 
+//*     cd android && gradlew clean
 
 //_ clean npm cache :
 //*     clean-npm : "rd /s /q node_modules && npm cache clean --force"
@@ -153,3 +163,110 @@
 
 //? Generating Self signed SSL certificate: 
 //* Go to 'react-native-tcp-socket' and follow instructions
+
+
+
+
+
+
+//? Android Signing :
+
+//_ Generate keystore 
+//* named 'release.keystore' and place it in 'android/app'
+
+// keytool -genkeypair -v -storetype PKCS12 -keystore release.keystore -alias androidreleasekey -keyalg RSA -keysize 2048 -validity 10000
+//*                            or 
+//*     Use android studio to generate keystore
+
+
+
+//_ Update  'android/gradle.properties' 
+//* These are global variables available for gradle 
+//*     (can change their names)
+//* add following :
+//      MYAPP_UPLOAD_STORE_FILE=release.keystore
+//      MYAPP_UPLOAD_KEY_ALIAS=androidreleasekey
+//      MYAPP_UPLOAD_STORE_PASSWORD=android
+//      MYAPP_UPLOAD_KEY_PASSWORD=android
+
+//_ Update 'android/app/build.gradle' 
+//* add following :
+// android {
+//     ...
+//     defaultConfig { ... }
+//     signingConfigs {
+//        debug {
+//             ...
+//         }
+//         release {
+//             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+//                 storeFile file(MYAPP_UPLOAD_STORE_FILE)
+//                 storePassword MYAPP_UPLOAD_STORE_PASSWORD
+//                 keyAlias MYAPP_UPLOAD_KEY_ALIAS
+//                 keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+//             }
+//         }
+//     }
+//     buildTypes {
+//         release {
+//             ...
+//             signingConfig signingConfigs.release
+//         }
+//     }
+// }
+
+//* Can configure above to reduce size by splitting APKs for different architectures (see docs)
+
+
+
+
+//? Check gradle compatibility
+//* Make sure Gradle and Gradle Plugin are synced 
+// https://developer.android.com/build/releases/gradle-plugin?buildsystem=ndk-build#updating-gradle
+//_ Gradle version :
+//*     cd android && gradlew -v
+//*     open 'android/gradle/wrapper/gradle-wrapper.properties' and check 'distributionUrl'
+
+//_ Gradle Plugin version :
+//*     open 'android/build.gradle' and check buildscript.dependencies.classpath = 'com.android.tools.build:gradle:<plugin-version>'
+
+//_ Import Android 
+//*    Open 'android/' in Android Studio and let it sync
+
+//! Sometimes move project to new location (after deleting all .gitignore files)
+
+
+
+
+
+
+
+
+
+//? Android Build 
+
+
+//_ APK generation
+//! Make sure to import android by opening 'android/' in Android Studio
+//*     Generate React Native Bundle :
+//          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res 
+
+//*     Assemble to APK :
+//          cd android && gradlew clean && gradlew assembleRelease && cd .. 
+//*         Output : android/app/build/outputs/apk/release/app-release.apk
+
+//*     Install APK to device :
+//          adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+// if error ENOENT: no such file or directory, open 'android/app/src/main/assets/index.android.bundle' 
+// run : mkdir android/app/src/main/assets
+
+
+//_ AAB generation (Android App Bundle)
+//*     npx react-native build-android --mode=release
+//*                     or
+//*     cd android && gradlew bundleRelease && cd ..
+
+//*     Output :  android/app/build/outputs/bundle/release/app-release.aab
+
+
