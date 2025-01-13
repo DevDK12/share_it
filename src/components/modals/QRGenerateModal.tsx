@@ -77,7 +77,7 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
 
     //_ On Device connected to server
     useEffect(() => {
-        console.log('isConnected updated to: ', isConnected);
+        console.log('QRGenerateModal : isConnected updated to: ', isConnected);
         if(isConnected){
             onClose();
             navigate('ConnectionScreen');

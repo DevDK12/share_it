@@ -14,6 +14,10 @@ const profile = require('../../assets/images/profile.jpg');
 const HomeHeader = () => {
     const [showQr, setShowQr] = useState(false);
 
+    const handle = () => {
+        setShowQr(false);
+    }
+
     return (
         <View style={homeHeaderStyles.mainContainer}>
             <SafeAreaView />
@@ -48,7 +52,8 @@ const HomeHeader = () => {
                 />
 
             </Svg>
-            {showQr && <QRGenerateModal visible={showQr} onClose={() => setShowQr(false)} />}
+            {showQr && <QRGenerateModal visible={showQr} onClose={handle} 
+            />}
 
         </View>
     );
