@@ -3,8 +3,8 @@ import DocumentPicker, {
     DocumentPickerResponse,
 } from 'react-native-document-picker';
 import { PermissionsAndroid, Platform } from "react-native";
-import { PERMISSIONS, request, RESULTS } from "react-native-permissions";
-import {  TOnFilePickedUp, TOnMediaPickedUp } from '../components/home/Options';
+import { Permission, PERMISSIONS, request, requestMultiple, RESULTS } from "react-native-permissions";
+import { TOnFilePickedUp, TOnMediaPickedUp } from '../components/home/Options';
 import { IPosition } from '../types/types';
 
 export const checkFilePermissions = async (platform: string) => {
@@ -143,3 +143,89 @@ export const pickDocument = (onFilePickedUp: TOnFilePickedUp) => {
             }
         });
 };
+
+
+
+
+
+
+
+
+const logPermissionStatus = (permission: string, status: string) => {
+    if (status === RESULTS.GRANTED) {
+        console.log(`${permission} PERMISSION GRANTED ✅`);
+    } else if (status === RESULTS.DENIED) {
+        console.log(`${permission} PERMISSION DENIED ❌`);
+    } else if (status === RESULTS.BLOCKED) {
+        console.log(`${permission} PERMISSION BLOCKED 🚫`);
+    } else {
+        console.log(`${permission} PERMISSION STATUS: ${status}`);
+    }
+};
+
+export const requestPermissions = async () => {
+    try {
+        const permissionsToRequest =
+            Platform.OS === 'ios'
+                ? [
+                    PERMISSIONS.IOS.CAMERA,
+                    PERMISSIONS.IOS.MICROPHONE,
+                    PERMISSIONS.IOS.PHOTO_LIBRARY,
+                ]
+                : [
+                    PERMISSIONS.ANDROID.CAMERA,
+                    PERMISSIONS.ANDROID.RECORD_AUDIO,
+                    PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+                ];
+
+        const results = await requestMultiple(permissionsToRequest);
+
+        for (const [permission, status] of Object.entries(results)) {
+            logPermissionStatus(permission, status);
+        }
+
+        const isCameraGranted =
+            Platform.OS === 'ios'
+                ? results[PERMISSIONS.IOS.CAMERA] === 'granted'
+                : results[PERMISSIONS.ANDROID.CAMERA] === 'granted';
+
+        const isMicrophoneGranted =
+            Platform.OS === 'ios'
+                ? results[PERMISSIONS.IOS.MICROPHONE] === 'granted'
+                : results[PERMISSIONS.ANDROID.RECORD_AUDIO] === 'granted';
+
+        const isPhotoLibraryGranted =
+            Platform.OS === 'ios'
+                ? results[PERMISSIONS.IOS.PHOTO_LIBRARY] === 'granted'
+                : results[PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE] === 'granted';
+
+        return { isCameraGranted, isMicrophoneGranted, isPhotoLibraryGranted };
+    } catch (error) {
+        console.error('Error requesting permissions:', error);
+        return { isCameraGranted: false, isMicrophoneGranted: false };
+    }
+};
+
+
+export const requestPermission = async (permission: string, iosPermission: Permission, androidPermission: Permission) => {
+    try {
+        const permissionToRequest = Platform.OS === 'ios' ? iosPermission : androidPermission;
+
+        const status = await request(permissionToRequest);
+
+        logPermissionStatus(permissionToRequest, status);
+
+        return status === 'granted';
+    } catch (error) {
+        console.error(`Error requesting ${permission.toLowerCase()} permission:`, error);
+        return false;
+    }
+};
+
+export const requestCameraPermission = async () => requestPermission('Camera', PERMISSIONS.IOS.CAMERA, PERMISSIONS.ANDROID.CAMERA);
+
+export const requestPhotoLibraryPermission = async () => requestPermission('Photo Library', PERMISSIONS.IOS.PHOTO_LIBRARY, PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+
+
+
+export const requestMicrophonePermission = async () => requestPermission('Microphone', PERMISSIONS.IOS.MICROPHONE, PERMISSIONS.ANDROID.RECORD_AUDIO);
