@@ -82,9 +82,10 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 
     //_ Server side
-    const startServer = useCallback((port: number) => {
+    const startServer = (port: number) => {
+        console.error('🔵🔵Starting Server 🔵🔵');
         if (server) {
-            console.log("Server Already running");
+            console.error("Server Already running");
             return;
         }
 
@@ -145,7 +146,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     console.log("Client Disconnected");
                     setIsConnected(false);
                     disconnect();
-                    cleanUp();
                 });
 
                 socket.on('error', (err) => console.log("Socket Error : ", err));
@@ -165,13 +165,12 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
         newServer.on('error', (error) => console.error('Server Error : ', error));
         setServer(newServer);
-
-    }, [server]);
+    };
 
 
 
     //_ Receiver side 
-    const connectToServer = useCallback((host: string, port: number, deviceName: string) => {
+    const connectToServer = (host: string, port: number, deviceName: string) => {
         const newClient = TcpSocket.connectTLS({
             host,
             port,
@@ -179,6 +178,7 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             ca: require('../../tls_certs/server-cert.pem')
         },
             () => {
+                console.log(`Client Connected to =====> ${host}:${port}`);
                 setIsConnected(true)
                 setOppositeConnectedDevice(deviceName);
                 const myDeviceName = DeviceInfo.getDeviceNameSync()
@@ -186,8 +186,7 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     {
                         event: 'connect',
                         deviceName: myDeviceName
-                    },
-                ),
+                    }),
                     'utf8',
                     (err) => {
                         if (err) console.log('Error in sending connect data : ', err);
@@ -244,39 +243,48 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             console.log("Connection Closed");
             setIsConnected(false);
             disconnect();
-
-            cleanUp();
         });
 
         newClient.on('error', (err) => console.log("Client Error : ", err));
 
         setClientSocket(newClient);
 
-    }, [clientSocket]);
+    }
 
 
     //_ Cleanup : Remove all listeners
     useEffect(() => {
         return () => {
             if (clientSocket) clientSocket.removeAllListeners();
+        };
+    }, [clientSocket]);
+    useEffect(() => {
+        return () => {
             if (serverSocket) serverSocket.removeAllListeners();
+        };
+    }, [serverSocket]);
+    useEffect(() => {
+        return () => {
             if (server) server.removeAllListeners();
         };
-    }, [clientSocket, server, serverSocket]);
+    }, [server]);
 
 
 
     //_ Disconnecting 
     const disconnect = () => {
         if (clientSocket) {
+            console.log('🔴 Client Socket Destroyed 🔴');
             clientSocket.destroy();
             setClientSocket(null);
         }
         if (serverSocket) {
+            console.log('🔴Server Socket Destroyed🔴');
             serverSocket.destroy();
             setServerSocket(null);
         }
         if (server) {
+            console.log('🔴Server Closed🔴');
             server.close();
             setServer(null);
         }
