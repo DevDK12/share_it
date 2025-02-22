@@ -74,9 +74,6 @@ export const getRandomPosition = ({ radius, existingPositions, minDistance }: IG
     let position: IPosition;
     let isOverlapping: boolean;
 
-    //_ Circle Position Formula
-    //* (x,y) : (  r * cos(theta)  , r * sin(theta)  )
-    //* where r varies  [50 , radius]
 
     do {
         const degree = Math.random() * 360; //* Angle in degrees
@@ -89,7 +86,6 @@ export const getRandomPosition = ({ radius, existingPositions, minDistance }: IG
 
         position = { x, y };
 
-        //* Overlapping : Min dist b/w center of two points  <  minDistance
         isOverlapping = existingPositions.some((pos) => {
             const dx = pos.x - position.x;
             const dy = pos.y - position.y;

@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
-import { View, Text, Platform, ListRenderItem, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native'
+import { View,  Platform, ListRenderItem, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native'
 import RNFS from 'react-native-fs'
 import { IFile } from '../types/TCPProviderTypes';
 import { connectionStyles } from '../styles/connectionStyles';
-import FileContainerItem, { renderThumbnail } from '../components/connection/FileContainerItem';
+import { renderThumbnail } from '../components/connection/FileContainerItem';
 import CustomText from '../components/global/CustomText';
 import { formatFileSize } from '../utils/libraryHelper';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { sendStyles } from '../styles/sendStyles';
 import { Colors } from '../utils/Constants';
-import { goBack } from '../utils/NavigationUtil';
 import BackBtn from '../components/ui/BackBtn';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 

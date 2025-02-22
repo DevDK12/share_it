@@ -10,12 +10,6 @@ import { useChunkStore } from "../db/chunkStore";
 
 
 
-//_ Convert file to buffer
-//_ Update ChunkStore from buffer
-//_ Update sentFiles
-//_ Send meta data to reciever via 'file_ack' event
-
-
 type TTransmitFileMeta = {
     file: Asset | DocumentPickerResponse;
     type: 'image' | 'file';
@@ -23,16 +17,15 @@ type TTransmitFileMeta = {
     setSentFiles: TSetSentFiles;
 }
 export const transmitFileMeta = async ({
-        file, 
-        type, 
-        socket, 
-        setSentFiles, 
-    } : TTransmitFileMeta) => {
+    file,
+    type,
+    socket,
+    setSentFiles,
+}: TTransmitFileMeta) => {
 
-    //_ Don't use 'useChunkStore()' here as it can't be used outside of a component
     const { setSenderChunkStore, senderChunkStore } = useChunkStore.getState();
-    
-    if(senderChunkStore != null){
+
+    if (senderChunkStore != null) {
         Alert.alert("Wait for Current file to be sent!")
         return;
     }
@@ -41,27 +34,27 @@ export const transmitFileMeta = async ({
     const normalizedPath = Platform.OS === 'ios' ? file?.uri : file?.uri?.replace('file://', '');
     console.log("Normalized Path: ", normalizedPath);
 
-    let fileData:string;
-    try{
+    let fileData: string;
+    try {
         fileData = await RNFS.readFile(normalizedPath!, 'base64');
 
     }
-    catch(e){
+    catch (e) {
         console.log("Returning bcz Error in reading file : ", e);
         return;
     }
 
 
-    
+
     const buffer = Buffer.from(fileData, 'base64');
 
 
     let totalChunks = 0;
-    let chunkArray : Buffer[] = [];
+    let chunkArray: Buffer[] = [];
     let offset = 0;
     const CHUNK_SIZE = 1024 * 8; //_ 8KB
 
-    while(offset < buffer.length){
+    while (offset < buffer.length) {
         const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
         chunkArray.push(chunk);
         offset += CHUNK_SIZE;
@@ -71,13 +64,12 @@ export const transmitFileMeta = async ({
     const fileName = type === 'file' ? (file as DocumentPickerResponse)?.name : (file as Asset)?.fileName;
     const fileSize = type === 'file' ? (file as DocumentPickerResponse)?.size : (file as Asset)?.fileSize;
 
-    if(type === 'file' ){
-        console.log("File type " , file.type);
+    if (type === 'file') {
+        console.log("File type ", file.type);
     }
 
 
     const metaData = {
-        // id: uuid() as string,
         id: `file-${Date.now()}`,
         name: fileName || 'No name',
         size: fileSize || 0,
@@ -104,26 +96,26 @@ export const transmitFileMeta = async ({
     ))
 
 
-    if(!socket){
+    if (!socket) {
         console.log("Socket not available");
         return;
     }
 
-    try{
+    try {
         console.log("File Acknowledgement Sending... ");
-        
+
         socket.write(JSON.stringify({
             event: 'file_ack',
             data: metaData,
         }), 'utf8', (err) => {
-            if(err){
+            if (err) {
                 console.log("Error in asking for 1st chunk : ", err);
                 return;
             }
             console.log("1st Chunk successfully asked ✅");
         });
     }
-    catch(e){
+    catch (e) {
         console.log("Error in sending file meta data : ", e);
     }
 
@@ -131,30 +123,25 @@ export const transmitFileMeta = async ({
 
 
 
-
-//_ Convert metadata to chunkStore with empty buffer[]
-//_ Update recievedFiles
-//_ Ask for 1st chunk via 'send_chunk_ack' event
-
 type TRecieveFileMeta = {
     data: IFile | null;
     socket: TLSSocket | null;
     setReceivedFiles: TSetReceivedFiles;
 }
 export const recieveFileMeta = async ({
-        data, 
-        socket, 
-        setReceivedFiles, 
-    } : TRecieveFileMeta) => {
+    data,
+    socket,
+    setReceivedFiles,
+}: TRecieveFileMeta) => {
 
     const { receiverChunkStore, setReceiverChunkStore } = useChunkStore.getState();
-    
-    if(receiverChunkStore){
+
+    if (receiverChunkStore) {
         Alert.alert("There are files which need to be received Wait Bro!")
         return;
     }
 
-    if(!data){
+    if (!data) {
         console.log("Data not available");
         return;
     }
@@ -163,8 +150,6 @@ export const recieveFileMeta = async ({
         id: data?.id,
         totalChunks: data.totalChunks,
         name: data.name,
-        // size: data.size,
-        // mimeType: data.mimeType,
         chunkArray: [],
     });
 
@@ -176,40 +161,32 @@ export const recieveFileMeta = async ({
     ));
 
 
-    if(!socket){
+    if (!socket) {
         console.log("Socket not available");
         return;
     }
 
-    try{
-        //_ To prevent bucket from overflowing from traffic , delay is added
+    try {
         await new Promise((resolve) => setTimeout(resolve, 10));
         console.log("File meta data recieved, Now asking for 1st chunk... ");
         socket.write(JSON.stringify({
             event: 'send_chunk_ack',
             chunkNo: 0,
         }), 'utf8', (err) => {
-            if(err){
+            if (err) {
                 console.log("Error in asking for 1st chunk : ", err);
                 return;
             }
             console.log("1st Chunk successfully asked ✅");
         });
     }
-    catch(e){
+    catch (e) {
         console.log("Error in sending chunk ack : ", e);
     }
 
 }
 
 
-
-
-
-//_ Transmits requested chunk
-//_ Updates totalSentBytes
-//_ Resets chunkStore if all chunks sent
-//_ Updates sentFiles[file] to available if all chunks sent
 
 type TTransmitChunk = {
     chunkNo: number;
@@ -219,20 +196,20 @@ type TTransmitChunk = {
 }
 
 export const transmitChunk = async ({
-        chunkNo, 
-        socket, 
-        setTotalSentBytes, 
-        setSentFiles
-    } : TTransmitChunk) => {
+    chunkNo,
+    socket,
+    setTotalSentBytes,
+    setSentFiles
+}: TTransmitChunk) => {
 
     const { senderChunkStore, resetSenderChunkStore } = useChunkStore.getState();
 
-    if(!senderChunkStore){
+    if (!senderChunkStore) {
         Alert.alert("There are no chunks to be sent");
         return;
     }
 
-    if(!socket){
+    if (!socket) {
         console.log("Socket not available");
         return;
     }
@@ -240,7 +217,7 @@ export const transmitChunk = async ({
     const totalChunks = senderChunkStore.totalChunks;
     console.log("Total Chunks: ", totalChunks);
 
-    try{
+    try {
         await new Promise((resolve) => setTimeout(resolve, 10));
         socket.write(
             JSON.stringify({
@@ -250,7 +227,7 @@ export const transmitChunk = async ({
             }),
             'utf8',
             (error) => {
-                if(error) {
+                if (error) {
                     console.log(`Error in sending chunkNo. - ${chunkNo} : ${error}`);
                     return;
                 }
@@ -260,12 +237,12 @@ export const transmitChunk = async ({
 
         setTotalSentBytes((prev) => prev + senderChunkStore.chunkArray[chunkNo].length);
 
-        if(chunkNo + 2 > totalChunks){
+        if (chunkNo + 2 > totalChunks) {
             console.log("All chunks sent ✅🔴");
-            setSentFiles((prevData) => 
+            setSentFiles((prevData) =>
                 produce(prevData, (draftFiles: any) => {
                     const fileIndex = draftFiles?.findIndex((file: any) => file.id === senderChunkStore.id);
-                    if(fileIndex !== -1){
+                    if (fileIndex !== -1) {
                         draftFiles[fileIndex].available = true;
                     }
                 })
@@ -274,20 +251,13 @@ export const transmitChunk = async ({
 
         }
     }
-    catch(err){
+    catch (err) {
         console.log("Error in sending chunk : ", err);
     }
 
 }
 
 
-
-
-
-//_ Updates chunkStore with recieved chunk
-//_ Updates totalRecievedBytes
-//_ 
-//_ Requests for next chunk
 
 
 type TReceiveChunk = {
@@ -299,15 +269,15 @@ type TReceiveChunk = {
 }
 
 export const receiveChunk = async ({
-        chunk, 
-        chunkNo, 
-        socket, 
-        setTotalReceivedBytes,  
-        setReceivedFiles,
-    } : TReceiveChunk) => {
+    chunk,
+    chunkNo,
+    socket,
+    setTotalReceivedBytes,
+    setReceivedFiles,
+}: TReceiveChunk) => {
 
     const { receiverChunkStore, setReceiverChunkStore, resetReceiverChunkStore } = useChunkStore.getState();
-    if(!receiverChunkStore){
+    if (!receiverChunkStore) {
         console.log("Chunk Store is null");
         return;
     }
@@ -321,7 +291,7 @@ export const receiveChunk = async ({
             chunkArray: updatedChunkArray,
 
         });
-        setTotalReceivedBytes((prevValue:number) => {
+        setTotalReceivedBytes((prevValue: number) => {
             return prevValue + bufferChunk.length;
         });
 
@@ -330,25 +300,25 @@ export const receiveChunk = async ({
         console.log("Error in updating chunk: ", error);
     };
 
-    if(!socket){
+    if (!socket) {
         console.log("Socket not available");
         return;
     }
 
 
-    if(chunkNo + 1 === receiverChunkStore?.totalChunks){
+    if (chunkNo + 1 === receiverChunkStore?.totalChunks) {
         console.log("All chunks received ✅🔴");
         const filePath = await generateFile();
 
-        if(!filePath){
+        if (!filePath) {
             console.log("Error in generating file");
             return;
         }
 
-        setReceivedFiles((prevFiles: IFile[]) => 
+        setReceivedFiles((prevFiles: IFile[]) =>
             produce(prevFiles, (draftFiles: IFile[]) => {
                 const fileIndex = draftFiles?.findIndex((file) => file.id === receiverChunkStore.id);
-                if(fileIndex !== -1){
+                if (fileIndex !== -1) {
                     draftFiles[fileIndex] = {
                         ...draftFiles[fileIndex],
                         uri: filePath,
@@ -363,19 +333,19 @@ export const receiveChunk = async ({
     }
 
 
-    try{
+    try {
         await new Promise((resolve) => setTimeout(resolve, 10));
         console.log("Requested for next chunk  ⬇️", chunkNo + 1)
-        socket.write(JSON.stringify({event: 'send_chunk_ack', chunkNo: chunkNo + 1})
-        , 'utf8', (err) => {
-            if(err){
-                console.log("Error in asking for 1st chunk : ", err);
-                return;
-            }
-            console.log("1st Chunk successfully asked ✅");
-        });
+        socket.write(JSON.stringify({ event: 'send_chunk_ack', chunkNo: chunkNo + 1 })
+            , 'utf8', (err) => {
+                if (err) {
+                    console.log("Error in asking for 1st chunk : ", err);
+                    return;
+                }
+                console.log("1st Chunk successfully asked ✅");
+            });
     }
-    catch(err){
+    catch (err) {
         console.log("Error in sending file: ", err);
     }
 
@@ -385,18 +355,16 @@ export const receiveChunk = async ({
 
 
 
-//_ Generates file from chunkArray and saves it to device
-
 const generateFile = async () => {
 
     const { receiverChunkStore } = useChunkStore.getState();
 
-    if(!receiverChunkStore){
+    if (!receiverChunkStore) {
         console.log("No Chunks or files to process");
         return;
     }
 
-    if(receiverChunkStore?.totalChunks !== receiverChunkStore?.chunkArray?.length){
+    if (receiverChunkStore?.totalChunks !== receiverChunkStore?.chunkArray?.length) {
         console.log("Not all chunks have been received");
         return;
     }

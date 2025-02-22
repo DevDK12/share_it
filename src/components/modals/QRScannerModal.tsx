@@ -4,7 +4,7 @@ import Icon from '../global/Icon';
 import CustomText from '../global/CustomText';
 
 import { ActivityIndicator } from 'react-native';
-import {Camera, CodeScanner, useCameraDevice} from 'react-native-vision-camera';
+import { Camera, CodeScanner, useCameraDevice } from 'react-native-vision-camera';
 import Animated, {
     Easing,
     useSharedValue,
@@ -24,96 +24,80 @@ type QRScannerModalProps = {
 
 const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
 
-    const {isConnected, connectToServer} = useTCP();
+    const { isConnected, connectToServer } = useTCP();
     const [isCameraLoading, setIsCameraLoading] = useState(true);
     const [codeFound, setCodeFound] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const device = useCameraDevice("back") as any;
 
-    //_ Shimmer animation  
-    //* Basically we have shimmer overlay (a simple box) containing linear gradient that continuously runs left to right
-    //* So shimmerStyle is animated style that moves left to right the original box
     const shimmerTranslateX = useSharedValue(-300);
-    const shimmerStyle = useAnimatedStyle(()=>({
-        transform: [{translateX: shimmerTranslateX.value}]
+    const shimmerStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: shimmerTranslateX.value }]
     }));
 
-    useEffect(()=>{
+    useEffect(() => {
         const checkPermission = async () => {
             const cameraPermission = await Camera.requestCameraPermission();
             setHasPermission(cameraPermission === 'granted');
         }
 
         checkPermission();
-        if(visible){
+        if (visible) {
             setIsCameraLoading(true);
-            //_ Delay for camera to load
-            //* So modal animation don't clash with camera loading
-            const timer = setTimeout(()=> setIsCameraLoading(false),400);
+            const timer = setTimeout(() => setIsCameraLoading(false), 400);
             return () => clearTimeout(timer);
         }
-    },[visible])
+    }, [visible])
 
-    useEffect(()=>{
+    useEffect(() => {
         shimmerTranslateX.value = withRepeat(
             withTiming(300, {
                 duration: 1500,
                 easing: Easing.linear,
             },),
-            -1, //* Infinity repetitions
+            -1,
             false,
         )
-    },[shimmerTranslateX])
+    }, [shimmerTranslateX])
 
     const handleScan = (data: string | undefined) => {
 
-        if(!data) return;
-
-        
-        //_ Address to connect 
-        //* tcp://192.168.1.1:1234|DeviceName (tcp://host:port|deviceName)
+        if (!data) return;
 
         const [connectionData, deviceName] = data.replace('tcp://', '').split('|');
         const [host, port] = connectionData?.split(":");
 
-        //_ Connect to Server
         connectToServer(host, parseInt(port, 10), deviceName);
     }
 
-    //_ On Connecting to Server
     useEffect(() => {
         console.log('isConnected updated to: ', isConnected);
 
-        if(isConnected){
+        if (isConnected) {
             onClose();
             navigate('ConnectionScreen');
         }
-    
+
     }, [isConnected])
-    
+
 
 
     const codeScanner = useMemo<CodeScanner>(() => ({
         codeTypes: ['qr', 'codabar'],
         onCodeScanned: (codes) => {
             if (codeFound) {
-                //* Code scanner is run in a loop
-                //* If we previously found a code, don't scan again i.e. return
                 return
             }
             console.log(`Scanned ${codes?.length} codes!`);
-            if(codes?.length > 0){
+            if (codes?.length > 0) {
                 const scannedData = codes[0].value;
-                console.log('Scanned Data : ',scannedData);
+                console.log('Scanned Data : ', scannedData);
                 setCodeFound(true);
-
-                //* Extract host, port, device, and connection data from scanned code
-                //* and make a tcp connection
                 handleScan(scannedData)
             }
         },
-        }),
-    []);
+    }),
+        []);
 
     return (
         <Modal
@@ -126,53 +110,51 @@ const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
             <View style={modalStyles.modalContainer}>
                 <View style={modalStyles.qrContainer}>
                     {
-                        isCameraLoading ? 
-                        (
-                            //_ Camera loader
-                            <View style={modalStyles.skeleton}>
-                                
-                                <Animated.View style={[modalStyles.shimmerOverlay, shimmerStyle]}> 
-                                    <LinearGradient 
-                                        colors= {['#f3f3f3', '#fff', '#f3f3f3']}
-                                        start= { {x: 0, y: 0} }
-                                        end= { {x: 1, y: 0} }
-                                        style={modalStyles.shimmerGradient}
-                                    />
-                                </Animated.View>
+                        isCameraLoading ?
+                            (
+                                <View style={modalStyles.skeleton}>
 
-                            </View>
-                        )
-                        :
-                        //_ Camera not loading 
-                        (
-                            <>
-                                {
-                                    (!device || !hasPermission) ? (
+                                    <Animated.View style={[modalStyles.shimmerOverlay, shimmerStyle]}>
+                                        <LinearGradient
+                                            colors={['#f3f3f3', '#fff', '#f3f3f3']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 0 }}
+                                            style={modalStyles.shimmerGradient}
+                                        />
+                                    </Animated.View>
 
-                                        <View style={modalStyles.skeleton}>
-                                            <Image 
-                                                source={require('../../assets/images/no_camera.png')}
-                                                style={modalStyles.noCameraImage}
-                                            />
-                                        </View>
-                                    )
-                                    : (
-                                        <View style={modalStyles.skeleton}>
-                                            <Camera 
-                                                style={modalStyles.camera}
-                                                device={device}
-                                                isActive={visible}
-                                                codeScanner={codeScanner}
-                                            />
-                                        </View>
-                                    )
-                                }
-                            </>
-                        )
+                                </View>
+                            )
+                            :
+                            (
+                                <>
+                                    {
+                                        (!device || !hasPermission) ? (
+
+                                            <View style={modalStyles.skeleton}>
+                                                <Image
+                                                    source={require('../../assets/images/no_camera.png')}
+                                                    style={modalStyles.noCameraImage}
+                                                />
+                                            </View>
+                                        )
+                                            : (
+                                                <View style={modalStyles.skeleton}>
+                                                    <Camera
+                                                        style={modalStyles.camera}
+                                                        device={device}
+                                                        isActive={visible}
+                                                        codeScanner={codeScanner}
+                                                    />
+                                                </View>
+                                            )
+                                    }
+                                </>
+                            )
 
                     }
                 </View>
-                
+
                 <View style={modalStyles.info}>
                     <CustomText style={modalStyles.infoText1}>
                         Ensure you're on the same Wi-Fi network.
@@ -182,7 +164,7 @@ const QRScannerModal: FC<QRScannerModalProps> = ({ visible, onClose }) => {
                     </CustomText>
                 </View>
 
-                <ActivityIndicator size="small" color='#000' style={{alignSelf: 'center'}} />
+                <ActivityIndicator size="small" color='#000' style={{ alignSelf: 'center' }} />
 
                 <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
                     <Icon name="close" iconFamily="Ionicons" color="#000" size={24} />

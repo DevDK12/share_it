@@ -36,9 +36,6 @@ const SendScreen = () => {
     const {isConnected, connectToServer} = useTCP();
 
 
-
-    //_ Listening for UDP Discovery packets
-
     const listenForDevices = async () => {
         const serverSocket = dgram.createSocket({
             type: 'udp4',
@@ -54,10 +51,6 @@ const SendScreen = () => {
 
             const address = msg?.toString();
             const [ _, otherDevice] = address?.replace('tcp://','').split('|');
-
-            // msg.toString() : tcp://192.168.1.4:4000|Dev DK
-            // rinfo : {"address": "192.168.1.4", "family": "IPv4", "port": 41981, "size": 0, "ts": 1735663357875}
-
             
             setNearByDevices((prev) => {
                 const deviceExists = prev?.some(device => device?.name === otherDevice);
@@ -74,8 +67,6 @@ const SendScreen = () => {
                         scale: new Animated.Value(0),
                     })
                     
-                    //_ To animate any Value
-                    //* Provide reference to the value and the animation config
                     Animated.timing(draftDevice[draftDevice.length - 1].scale, {
                         toValue: 1,
                         duration: 1500,
@@ -110,13 +101,10 @@ const SendScreen = () => {
 
 
     const connectToDevice = (address: string) => {
-        //_ Address to connect 
-        //* tcp://192.168.1.1:1234|DeviceName (tcp://host:port|deviceName)
 
         const [connectionData, deviceName] = address.replace('tcp://', '').split('|');
         const [host, port] = connectionData.split(":");
 
-        //_ Connect to Server
         connectToServer(host, parseInt(port, 10), deviceName);
     }
 
@@ -182,7 +170,6 @@ const SendScreen = () => {
                                             sendStyles.deviceDot,
                                             { 
                                                 transform: [{ scale: device.scale }],
-                                                //_ Shift center from (top=0 left=0) to (top=center left=center)
                                                 left: screenWidth / 2.33 + device.position?.x,
                                                 top: screenWidth / 2.33 +  device.position?.y,
                                             },

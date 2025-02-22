@@ -3,7 +3,7 @@ import TcpSocket from 'react-native-tcp-socket';
 import DeviceInfo from "react-native-device-info";
 import Server from "react-native-tcp-socket/lib/types/Server";
 import TLSSocket from "react-native-tcp-socket/lib/types/TLSSocket";
-import {  receiveChunk, recieveFileMeta, transmitChunk } from "./TCPUtils";
+import { receiveChunk, recieveFileMeta, transmitChunk } from "./TCPUtils";
 import { useChunkStore } from "../db/chunkStore";
 import { IFile, IParsedData, TSetReceivedFiles, TSetSentFiles } from "../types/TCPProviderTypes";
 
@@ -43,16 +43,6 @@ export const useTCP = (): TCPContextType => {
 }
 
 
-//? How TCP Connection works 
-//_ We either have server or client at a time in 1 app
-
-//_ We start server on WILDCARD address '0.0.0.0' 
-//*     So any device in same network can connect to it via network's IP address
-//*     Therefore we display NETWORK's IP address in QR Code for client to connect
-
-//* To store connected device's name, we store it in 'oppositeConnectedDevice'
-//*     to remember which device is connected to us or to whom we are connected
-
 
 export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
@@ -81,7 +71,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
 
 
-    //_ Server side
     const startServer = (port: number) => {
         console.error('🔵🔵Starting Server 🔵🔵');
         if (server) {
@@ -93,13 +82,11 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             keystore: require('../../tls_certs/server-keystore.p12'),
         },
             (socket) => {
-                //_ This gets activated when client connects to server
                 console.log('Client connected : ', socket.address());
 
                 setServerSocket(socket);
                 socket.setNoDelay(true);
 
-                //_ To set sender's buffer size for both reading and writing 
                 socket.readableHighWaterMark = 1024 * 1024 * 1;
                 socket.writableHighWaterMark = 1024 * 1024 * 1;
 
@@ -111,7 +98,7 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
                         setOppositeConnectedDevice(parsedData?.deviceName);
                     }
                     if (parsedData?.event === 'file_ack') {
-                        if(!parsedData?.data) {
+                        if (!parsedData?.data) {
                             console.log("No file data received");
                             return;
                         }
@@ -152,7 +139,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             }
         );
 
-        //_ Start Server on WILDCARD Address
         newServer.listen({
             port,
             host: '0.0.0.0',
@@ -169,7 +155,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 
 
-    //_ Receiver side 
     const connectToServer = (host: string, port: number, deviceName: string) => {
         const newClient = TcpSocket.connectTLS({
             host,
@@ -198,7 +183,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
         newClient.setNoDelay(true);
 
-        //_ To set sender's buffer size for both reading and writing 
         newClient.readableHighWaterMark = 1024 * 1024 * 1;
         newClient.writableHighWaterMark = 1024 * 1024 * 1;
 
@@ -207,7 +191,7 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
             const parsedData: IParsedData = JSON.parse(data?.toString());
 
             if (parsedData?.event === 'file_ack') {
-                if(!parsedData?.data) {
+                if (!parsedData?.data) {
                     console.log("No file data received");
                     return;
                 }
@@ -235,7 +219,7 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     setReceivedFiles
                 });
             }
-            
+
         });
 
 
@@ -252,7 +236,6 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
 
 
-    //_ Cleanup : Remove all listeners
     useEffect(() => {
         return () => {
             if (clientSocket) clientSocket.removeAllListeners();
@@ -271,20 +254,16 @@ export const TCPProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 
 
-    //_ Disconnecting 
     const disconnect = () => {
         if (clientSocket) {
-            console.log('🔴 Client Socket Destroyed 🔴');
             clientSocket.destroy();
             setClientSocket(null);
         }
         if (serverSocket) {
-            console.log('🔴Server Socket Destroyed🔴');
             serverSocket.destroy();
             setServerSocket(null);
         }
         if (server) {
-            console.log('🔴Server Closed🔴');
             server.close();
             setServer(null);
         }

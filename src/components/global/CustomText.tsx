@@ -24,9 +24,6 @@ type CustomTextProps = {
 }
 
 
-//_ Font size for each platform
-//* Android have usually bigger font size than iOS
-
 const fontSizeMap: Record<Variant, Record<PlatformType, number>> = {
     h1: { android: 24, ios: 22 },
     h2: { android: 22, ios: 20 },

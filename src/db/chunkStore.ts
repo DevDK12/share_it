@@ -1,9 +1,5 @@
 import { create } from "zustand";
 
-//_ Zustand Global state for ChunkStore
-
-//* Zustand setters should not be passed but rather consumed directly
-
 
 interface IReceiverChunkStore {
     id: string | null;
@@ -12,21 +8,17 @@ interface IReceiverChunkStore {
     totalChunks: number;
 };
 
-interface ISenderChunkStore extends Omit<IReceiverChunkStore, 'name'> {}
+interface ISenderChunkStore extends Omit<IReceiverChunkStore, 'name'> { }
 
-type TSetReceiverChunkStore =  (chunkStore: IReceiverChunkStore ) => void;
+type TSetReceiverChunkStore = (chunkStore: IReceiverChunkStore) => void;
 type TResetReceiverChunkStore = () => void;
-type TSetSenderChunkStore = (chunkStore: ISenderChunkStore ) => void;
+type TSetSenderChunkStore = (chunkStore: ISenderChunkStore) => void;
 type TResetSenderChunkStore = () => void;
 
-interface IChunkStore { 
+interface IChunkStore {
 
-    //_ Stores chunk[] at Reciever side
-    receiverChunkStore : IReceiverChunkStore | null;
-
-    //_ Stores chunk[] at Sender side
+    receiverChunkStore: IReceiverChunkStore | null;
     senderChunkStore: ISenderChunkStore | null;
-
     setReceiverChunkStore: TSetReceiverChunkStore;
     resetReceiverChunkStore: TResetReceiverChunkStore;
     setSenderChunkStore: TSetSenderChunkStore;
@@ -37,8 +29,8 @@ interface IChunkStore {
 export const useChunkStore = create<IChunkStore>((set) => ({
     receiverChunkStore: null,
     senderChunkStore: null,
-    setReceiverChunkStore: (receiverChunkStore) => set({receiverChunkStore}),
-    resetReceiverChunkStore: () => set({receiverChunkStore: null}),
-    setSenderChunkStore: (senderChunkStore) => set({senderChunkStore}),
-    resetSenderChunkStore: () => set({senderChunkStore: null}),
+    setReceiverChunkStore: (receiverChunkStore) => set({ receiverChunkStore }),
+    resetReceiverChunkStore: () => set({ receiverChunkStore: null }),
+    setSenderChunkStore: (senderChunkStore) => set({ senderChunkStore }),
+    resetSenderChunkStore: () => set({ senderChunkStore: null }),
 }))

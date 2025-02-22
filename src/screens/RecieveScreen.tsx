@@ -24,8 +24,6 @@ const RecieveScreen = () => {
     const [qrValue, setQrValue] = useState('');
     const {isConnected, startServer, server} = useTCP();
 
-    //_ Interval ref
-    //* Persists across re-renders and does not trigger re-render (unlike useState)
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -38,7 +36,6 @@ const RecieveScreen = () => {
     }
 
 
-    //_ Starting Server on component mount
     const setupServer = async () => {
         const deviceName = await DeviceInfo.getDeviceName();
         const ip = await getLocalIPAddress();
@@ -61,13 +58,6 @@ const RecieveScreen = () => {
 
 
 
-
-    //_ Broadcasting Discovery Packet 
-    //* We broadcast discovery packet within same network to broadcastAddress (i.e. network Address + .255 )
-    //*     Eg if IP address = 192.168.1.2 then broadcast address = 192.168.1.255
-    //*         network address = 192.168.1         host address = x.x.x.2       broadcast address = x.x.x.255    
-
-    //- Dont use useCallback here
     const broadcastDiscoveryPacket = async () => {
         const deviceName = await DeviceInfo.getDeviceName();
         const broadcastAddress = await getBroadcastIPAddress();
@@ -102,9 +92,6 @@ const RecieveScreen = () => {
         })
     }
 
-
-    //* Discovery packet is broadcasted on every 3 sec 
-    //* (after  component mount once qrValue is generated i.e. server started)
     useEffect(()=>{
         if(!qrValue) return;
 

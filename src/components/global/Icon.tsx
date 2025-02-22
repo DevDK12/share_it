@@ -11,10 +11,8 @@ type IconProps = {
     iconFamily: "Ionicons" | "MaterialIcons" | "MaterialCommunityIcons";
 };
 
-//_ RFValue(size) is used to make the icon size responsive
 
-
-const Icon : FC<IconProps> = ({color, size, name, iconFamily}) => {
+const Icon: FC<IconProps> = ({ color, size, name, iconFamily }) => {
     return (
         <>
             {iconFamily === "Ionicons" && <Ionicons name={name} size={RFValue(size)} color={color} />}

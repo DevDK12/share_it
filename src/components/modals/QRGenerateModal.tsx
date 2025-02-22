@@ -49,7 +49,6 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
         );
         
         console.log('QRGenerateModal visible: ', visible);
-        //_ Start server
         if(visible){
             setLoading(true);
             setupServer();
@@ -75,7 +74,6 @@ const QRGenerateModal: FC<QRGenerateModalProps> = ({ visible, onClose }) => {
     }
 
 
-    //_ On Device connected to server
     useEffect(() => {
         console.log('QRGenerateModal : isConnected updated to: ', isConnected);
         if(isConnected){

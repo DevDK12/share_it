@@ -25,10 +25,6 @@ const Options: FC<OptionsProps> = ({ isHome, onMediaPickedUp, onFilePickedUp }) 
     const {isConnected} = useTCP();
 
 
-    //_ Options will open file picker 
-    //* But only if user is at Connection screen else it will force to make connection first
-    //* by sending to Send Screen 
-
     const handleUniversalPicker = async (type: string) => {
         if(isHome){
             if(isConnected){

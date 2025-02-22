@@ -47,8 +47,6 @@ const ConnectionScreen = () => {
         
         console.log("Picked image: ", image);
         
-        //* Send image to the connected device
-        
         await transmitFileMeta({
             file: image,
             type: 'image',
@@ -60,8 +58,6 @@ const ConnectionScreen = () => {
     const handleFilePickedUp = async (file: DocumentPickerResponse) => {
         console.log("Picked file: ", file);
 
-        
-        //* Send file to the connected device
         
         await transmitFileMeta({
             file: file,
@@ -133,7 +129,6 @@ const ConnectionScreen = () => {
                             (activeTab === "SENT" ? sentFiles?.length > 0 : receivedFiles?.length > 0) ? (
                             <FlatList
                                 data={activeTab === 'SENT' ? sentFiles : receivedFiles}
-                                // keyExtractor={(item) => item.toString()}
                                 keyExtractor={(item) => item.id}
                                 renderItem={FileContainerItem}
                                 contentContainerStyle={connectionStyles.fileList}

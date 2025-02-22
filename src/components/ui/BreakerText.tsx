@@ -1,13 +1,13 @@
 import { FC } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import CustomText from '../global/CustomText';
 
 
-const BreakerText: FC<{text: string}> = ({text}) => {
+const BreakerText: FC<{ text: string }> = ({ text }) => {
     return (
         <View style={styles.breakerContainer}>
             <View style={styles.horizontalLine} />
-            <CustomText 
+            <CustomText
                 style={styles.breakerText}
                 fontFamily='Okra-Medium'
                 fontSize={12}
