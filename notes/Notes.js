@@ -1,4 +1,4 @@
-//? Configure eslint 
+//? Configure eslint
 
 //? Import assets
 //*  Import images, fonts, etc. in src/assets
@@ -6,7 +6,7 @@
 //? Configure bable config
 //* If we are using any plugin like reanimated
 
-//? Configure Metro bundler 
+//? Configure Metro bundler
 //* To resolve and transform assets
 //_ Support .svg imports as components
 
@@ -124,23 +124,23 @@
 //*     Deletes compiled classes / jars via gradle from entire project including node_modules
 //-     Should be used before cleaning npm
 
-//_ clean-android : 
-//*     clean-android (these are not in git) : 
-//          rmdir /s /q android\build 
-//          rmdir /s /q android\app\build 
+//_ clean-android :
+//*     clean-android (these are not in git) :
+//          rmdir /s /q android\build
+//          rmdir /s /q android\app\build
 //          rmdir /s /q android\app\.cxx
 //          rmdir /s /q android\.gradle
 //          rmdir /s /q android\.idea
 //!         rmdir /s /q android\app\src\main\res (part of git)
 
 
-//_ Clean gradle : 
+//_ Clean gradle :
 //*     cd android && gradlew clean
 
 //_ clean npm cache :
 //*     clean-npm : "rd /s /q node_modules && npm cache clean --force"
 
-//_ Clean metro cache : 
+//_ Clean metro cache :
 //*     clean-metro : "rmdir /s /q %TEMP%\\metro-cache"
 //*     We can also clean it mannualy via 'Windows + R' => %TEMP% => delete 'metro-cache' folder
 
@@ -154,14 +154,14 @@
 //_ Clean Ultimate :
 //* Should be used if nothing else works
 //*     clean-ultimate : "rd /s /q node_modules && npm cache clean --force && watchman watch-del-all && rmdir /s /q %TEMP%\\haste-map-* && rmdir /s /q %TEMP%\\metro-cache"
-//*                                                 or                                          
+//*                                                 or
 //*    clean-ultimate : npm run clean-npm && npm run clean-watchman && npm run clean-jest && npm run clean-metro"
 
 //_ Now run "npm i && npm run reset-cache"
 
 
 
-//? Generating Self signed SSL certificate: 
+//? Generating Self signed SSL certificate:
 //* Go to 'react-native-tcp-socket' and follow instructions
 
 
@@ -171,17 +171,17 @@
 
 //? Android Signing :
 
-//_ Generate keystore 
+//_ Generate keystore
 //* named 'release.keystore' and place it in 'android/app'
 
 // keytool -genkeypair -v -storetype PKCS12 -keystore release.keystore -alias androidreleasekey -keyalg RSA -keysize 2048 -validity 10000
-//*                            or 
+//*                            or
 //*     Use android studio to generate keystore
 
 
 
-//_ Update  'android/gradle.properties' 
-//* These are global variables available for gradle 
+//_ Update  'android/gradle.properties'
+//* These are global variables available for gradle
 //*     (can change their names)
 //* add following :
 //      MYAPP_UPLOAD_STORE_FILE=release.keystore
@@ -189,7 +189,7 @@
 //      MYAPP_UPLOAD_STORE_PASSWORD=android
 //      MYAPP_UPLOAD_KEY_PASSWORD=android
 
-//_ Update 'android/app/build.gradle' 
+//_ Update 'android/app/build.gradle'
 //* add following :
 // android {
 //     ...
@@ -221,7 +221,7 @@
 
 
 //? Check gradle compatibility
-//* Make sure Gradle and Gradle Plugin are synced 
+//* Make sure Gradle and Gradle Plugin are synced
 // https://developer.android.com/build/releases/gradle-plugin?buildsystem=ndk-build#updating-gradle
 //_ Gradle version :
 //*     cd android && gradlew -v
@@ -230,7 +230,7 @@
 //_ Gradle Plugin version :
 //*     open 'android/build.gradle' and check buildscript.dependencies.classpath = 'com.android.tools.build:gradle:<plugin-version>'
 
-//_ Import Android 
+//_ Import Android
 //*    Open 'android/' in Android Studio and let it sync
 
 //! Sometimes move project to new location (after deleting all .gitignore files)
@@ -243,22 +243,22 @@
 
 
 
-//? Android Build 
+//? Android Build
 
 
 //_ APK generation
 //! Make sure to import android by opening 'android/' in Android Studio
 //*     Generate React Native Bundle :
-//          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res 
+//          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
 
 //*     Assemble to APK :
-//          cd android && gradlew clean && gradlew assembleRelease && cd .. 
+//          cd android && gradlew clean && gradlew assembleRelease && cd ..
 //*         Output : android/app/build/outputs/apk/release/app-release.apk
 
 //*     Install APK to device :
 //          adb install -r android/app/build/outputs/apk/release/app-release.apk
 
-// if error ENOENT: no such file or directory, open 'android/app/src/main/assets/index.android.bundle' 
+// if error ENOENT: no such file or directory, open 'android/app/src/main/assets/index.android.bundle'
 // run : mkdir android/app/src/main/assets
 
 
@@ -270,3 +270,20 @@
 //*     Output :  android/app/build/outputs/bundle/release/app-release.aab
 
 
+//? Git workflow setup for Android :
+//_ Create release workflow in .github/worflows/
+
+//_ Make gradlew executable to git
+//* cd android && git update-index --chmod=+x gradlew
+
+//_ Update gradle.properties
+//* To set global gradle properties 
+
+//_ Set github secrets in 
+//* github repo settings -> Security -> Secrets and variables -> Actions
+//*     KEYSTORE_PASSWORD
+//*     KEY_ALIAS
+//*     KEY_PASSWORD
+
+//_ Update app/build.gradle
+//* To use github secrets for keystore
